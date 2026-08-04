@@ -33,6 +33,17 @@ export const mg: DeepPartial<typeof fr> = {
     date: 'Daty',
     actions: 'Asa',
   },
+  campagne: {
+    badgeSocle: 'Fototra',
+    form: {
+      mode: 'Karazana fanombanana',
+      modeSocle: 'Fototra',
+      modeComplet: 'Feno',
+      perimetre: 'Faritany voakasika',
+      perimetreTout: 'Rehetra',
+      perimetreRien: 'Tsy misy',
+    },
+  },
   evaluation: {
     notes: {
       na: 'Tsy mihatra',

@@ -138,6 +138,7 @@ export async function createCampagne(
       date_ouverture:     payload.dateOuverture,
       date_fermeture:     payload.dateFermeture,
       statut:             payload.statut,
+      mode:               payload.mode,
       perimetre:          payload.perimetre,
       evaluateur_id:      payload.evaluateurId  ?? null,
       evaluateur_name:    payload.evaluateurName ?? null,
@@ -188,6 +189,7 @@ export async function updateCampagne(
   if (data.dateOuverture     !== undefined) row['date_ouverture']      = data.dateOuverture;
   if (data.dateFermeture     !== undefined) row['date_fermeture']      = data.dateFermeture;
   if (data.statut            !== undefined) row['statut']              = data.statut;
+  if (data.mode              !== undefined) row['mode']                = data.mode;
   if (data.perimetre         !== undefined) row['perimetre']           = data.perimetre;
   if (data.evaluateurId      !== undefined) row['evaluateur_id']       = data.evaluateurId ?? null;
   if (data.evaluateurName    !== undefined) row['evaluateur_name']     = data.evaluateurName ?? null;
