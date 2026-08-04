@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { colors, elevation, borderRadius, gradients } from '@/design/tokens'
 
@@ -12,10 +12,17 @@ interface ValidationSignatureProps {
   validatorName: string
   validatorEmail: string
   hasEssentialKO: boolean
-  onValidate: (conclusion: string) => Promise<void>
+  onValidate: (conclusion: string, confirmedKO: boolean) => Promise<void>
   onRequestRevision: () => void
   loading: boolean
   submittedAt?: Date | undefined
+  /** Auto-validation Faritany : dépôt du PV de comité obligatoire. */
+  requierePv?: boolean | undefined
+  onUploadPv?: ((file: File) => Promise<void>) | undefined
+  pvUploaded?: boolean | undefined
+  pvUploading?: boolean | undefined
+  /** Masque le bouton « renvoyer en révision » (auto-validation : l'ASN valide). */
+  hideRevision?: boolean | undefined
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -28,11 +35,17 @@ export function ValidationSignature({
   onRequestRevision,
   loading,
   submittedAt,
+  requierePv = false,
+  onUploadPv,
+  pvUploaded = false,
+  pvUploading = false,
+  hideRevision = false,
 }: ValidationSignatureProps) {
   const { t } = useTranslation()
   const [conclusion, setConclusion] = useState('')
   const [certified, setCertified] = useState(false)
   const [confirmedKO, setConfirmedKO] = useState(false)
+  const pvInputRef = useRef<HTMLInputElement>(null)
 
   const slaDate = useMemo(() => {
     if (submittedAt == null) return null
@@ -41,11 +54,23 @@ export function ValidationSignature({
     return deadline.toLocaleDateString()
   }, [submittedAt])
 
-  const canValidate = certified && conclusion.trim().length > 0 && (!hasEssentialKO || confirmedKO)
+  const canValidate =
+    certified &&
+    conclusion.trim().length > 0 &&
+    (!hasEssentialKO || confirmedKO) &&
+    (!requierePv || pvUploaded)
 
   async function handleValidate() {
     if (!canValidate || loading) return
-    await onValidate(conclusion)
+    await onValidate(conclusion, confirmedKO)
+  }
+
+  async function handlePvChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file && onUploadPv) {
+      await onUploadPv(file)
+      e.target.value = ''
+    }
   }
 
   return (
@@ -81,6 +106,36 @@ export function ValidationSignature({
             </p>
           </div>
         </div>
+
+        {/* PV de comité — obligatoire en auto-validation Faritany */}
+        {requierePv && (
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest block mb-2" style={{ color: colors.onSurfaceVariant }}>
+              {t('validation.pvComite')}
+            </span>
+            <input
+              ref={pvInputRef}
+              type="file"
+              accept="application/pdf,image/*,.doc,.docx"
+              className="hidden"
+              onChange={handlePvChange}
+              disabled={loading || pvUploading}
+            />
+            <button
+              type="button"
+              onClick={() => pvInputRef.current?.click()}
+              disabled={loading || pvUploading}
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-lg border text-sm font-semibold transition-colors disabled:opacity-50"
+              style={{ background: colors.surfaceContainerHigh, color: colors.primary, borderColor: `${colors.outlineVariant}` }}
+            >
+              <span className="material-symbols-outlined text-[18px]">{pvUploaded ? 'check_circle' : 'upload_file'}</span>
+              {pvUploading ? t('common.loading') : pvUploaded ? t('validation.pvUploaded') : t('validation.pvUpload')}
+            </button>
+            {!pvUploaded && (
+              <p className="text-[11px] mt-1.5" style={{ color: colors.error }}>{t('validation.pvObligatoire')}</p>
+            )}
+          </div>
+        )}
 
         {/* Conclusion textarea */}
         <label className="block">
@@ -166,18 +221,20 @@ export function ValidationSignature({
             {loading ? t('common.loading') : t('validation.approveEvaluation')}
           </button>
 
-          <button
-            onClick={onRequestRevision}
-            disabled={loading}
-            className="w-full py-4 rounded-xl font-bold uppercase tracking-widest text-sm border transition-colors hover:opacity-90 disabled:opacity-50"
-            style={{
-              background: colors.surfaceContainerLowest,
-              color: colors.error,
-              borderColor: `${colors.error}30`,
-            }}
-          >
-            {t('validation.requestRevision')}
-          </button>
+          {!hideRevision && (
+            <button
+              onClick={onRequestRevision}
+              disabled={loading}
+              className="w-full py-4 rounded-xl font-bold uppercase tracking-widest text-sm border transition-colors hover:opacity-90 disabled:opacity-50"
+              style={{
+                background: colors.surfaceContainerLowest,
+                color: colors.error,
+                borderColor: `${colors.error}30`,
+              }}
+            >
+              {t('validation.requestRevision')}
+            </button>
+          )}
         </div>
 
         {/* Timestamp */}

@@ -26,6 +26,7 @@ type UserRole =
   | 'admin_global'
   | 'responsable_region'
   | 'responsable_osn'
+  | 'responsable_asn'
   | 'utilisateur_asn'
   | 'evaluateur'
   | 'lecteur';
@@ -70,6 +71,18 @@ function isParentOrg(auth: AuthContext | null, docOrgId: string): boolean {
     || belongsToOrg(auth, docOrgId);
 }
 
+/**
+ * evals_update_resp_asn : un responsable_asn peut faire passer SA PROPRE
+ * évaluation de brouillon/en_cours vers validee (auto-validation Faritany).
+ * Jamais l'évaluation d'un autre Faritany, jamais une évaluation déjà validée.
+ */
+function canAutoValidate(auth: AuthContext | null, evalOrgId: string, statut: string): boolean {
+  return isAuthenticated(auth)
+    && auth!.role === 'responsable_asn'
+    && auth!.orgId === evalOrgId
+    && (statut === 'brouillon' || statut === 'en_cours');
+}
+
 // ── Contextes de test ────────────────────────────────────────────────────────
 
 const adminGlobal: AuthContext = {
@@ -104,7 +117,31 @@ const lecteurTEM: AuthContext = {
   uid: 'lect-1', role: 'lecteur', orgId: 'tem', orgType: 'OSN', parentOrgId: 'region-africa',
 };
 
+const respAsnAntananarivo: AuthContext = {
+  uid: 'resp-asn-ant', role: 'responsable_asn', orgId: 'tem-antananarivo', orgType: 'ASN', parentOrgId: 'tem',
+};
+
 const unauthenticated = null;
+
+// ── Tests — Auto-validation Faritany (responsable_asn) ───────────────────────
+
+describe('Auto-validation Faritany (evals_update_resp_asn)', () => {
+  it('un responsable_asn auto-valide SA PROPRE évaluation en_cours', () => {
+    expect(canAutoValidate(respAsnAntananarivo, 'tem-antananarivo', 'en_cours')).toBe(true);
+  });
+
+  it('refuse l’auto-validation d’un AUTRE Faritany (isolation A ≠ B)', () => {
+    expect(canAutoValidate(respAsnAntananarivo, 'tem-fianarantsoa', 'en_cours')).toBe(false);
+  });
+
+  it('refuse la réouverture d’une évaluation déjà validée', () => {
+    expect(canAutoValidate(respAsnAntananarivo, 'tem-antananarivo', 'validee')).toBe(false);
+  });
+
+  it('un utilisateur_asn (non responsable) ne peut pas auto-valider', () => {
+    expect(canAutoValidate(asnAntananarivo, 'tem-antananarivo', 'en_cours')).toBe(false);
+  });
+});
 
 // ── Tests — Isolation multi-tenant ───────────────────────────────────────────
 

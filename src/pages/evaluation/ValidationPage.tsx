@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { colors } from '@/design/tokens'
 import { useAuthStore } from '@/stores/authStore'
 import { useEvaluationStore } from '@/stores/evaluationStore'
-import { getScores, getPreuves } from '@/services/evaluationService'
+import { getScores, getPreuves, autoValiderEvaluation } from '@/services/evaluationService'
+import { uploadEvidence } from '@/services/storageService'
 import { getCampagne } from '@/services/campagneService'
 import { getReferentiel, getCriteresEssentiels, calculerScoreDimension, calculerScoreGlobal } from '@/services/referentielService'
 import { writeAuditEntry } from '@/services/auditService'
@@ -25,7 +26,7 @@ export function ValidationPage() {
   const { t, i18n } = useTranslation()
   const lang = i18n.language === 'en' ? 'en' : 'fr'
 
-  const { profile, role, user } = useAuthStore()
+  const { profile, role, user, orgId } = useAuthStore()
   const { evaluation, load, updateStatut, loading: evalLoading } = useEvaluationStore()
 
   const [referentiel, setReferentiel] = useState<Referentiel | null>(null)
@@ -34,6 +35,8 @@ export function ValidationPage() {
   const [loading, setLoading] = useState(true)
   const [validating, setValidating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [pvComitePath, setPvComitePath] = useState<string | null>(null)
+  const [pvUploading, setPvUploading] = useState(false)
 
   // Load evaluation, referentiel, and scores
   useEffect(() => {
@@ -136,6 +139,18 @@ export function ValidationPage() {
   // Authorization check
   const canValidate = role != null && VALIDATION_ROLES.includes(role) && evaluation?.statut === 'soumise'
 
+  // Auto-validation Faritany : le responsable_asn valide SA PROPRE évaluation en_cours.
+  // La RLS (evals_update_resp_asn) fait foi côté serveur ; ici c'est du confort UI.
+  const isAutoValidation =
+    role === 'responsable_asn' &&
+    orgId != null &&
+    evaluation?.orgId === orgId &&
+    evaluation?.statut === 'en_cours'
+  // Codes des essentiels réellement non conformes (note 0 ou absente) — jamais N/A.
+  const essentielsKOCodes = essentielsKO
+    .filter(e => scoresMap[e.critere.code] !== null)
+    .map(e => e.critere.code)
+
   // Handlers
   const handleValidate = useCallback(async (conclusion: string) => {
     if (!evaluation || !canValidate || !user) return
@@ -182,6 +197,56 @@ export function ValidationPage() {
       setValidating(false)
     }
   }, [evaluation, user, updateStatut, navigate])
+
+  const handleUploadPv = useCallback(async (file: File) => {
+    if (!evaluation || !orgId) return
+    setPvUploading(true)
+    setError(null)
+    try {
+      const path = `${orgId}/pv-comite/${evaluation.id}/${Date.now()}-${file.name}`
+      await uploadEvidence(path, file)
+      setPvComitePath(path)
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setPvUploading(false)
+    }
+  }, [evaluation, orgId])
+
+  const handleAutoValidate = useCallback(async (conclusion: string, confirmedKO: boolean) => {
+    if (!evaluation || !user || !orgId || role == null) return
+    if (!pvComitePath) {
+      // Miroir du garde-fou SQL (trg_garde_auto_validation) : dit AVANT l'appel.
+      setError(t('validation.pvObligatoire'))
+      return
+    }
+    setValidating(true)
+    setError(null)
+    try {
+      await autoValiderEvaluation(evaluation.id, {
+        pvComitePath,
+        essentielsKO: essentielsKOCodes,
+        confirmeMalgreEssentiels: confirmedKO,
+        valideePar: user.id,
+        role,
+        userOrgId: orgId,
+        evalOrgId: evaluation.orgId,
+      })
+      await writeAuditEntry({
+        userId: user.id,
+        userEmail: user.email ?? '',
+        action: 'validate',
+        resource: 'evaluation',
+        resourceId: evaluation.id,
+        metadata: { autoValidation: true, essentielsKO: essentielsKOCodes.length, conclusion },
+      })
+      // Pas de navigation : l'écran affiche l'échéance de revue (statut → 'validee').
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setValidating(false)
+    }
+  }, [evaluation, user, orgId, role, pvComitePath, essentielsKOCodes, t])
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -275,8 +340,21 @@ export function ValidationPage() {
 
       {/* Workflow stepper */}
       <div className="card p-6">
-        <WorkflowStatusStepper currentStatut={evaluation.statut} />
+        <WorkflowStatusStepper currentStatut={evaluation.statut} faritany={evaluation.type === 'auto'} />
       </div>
+
+      {/* Échéance de revue nationale — après auto-validation */}
+      {evaluation.statut === 'validee' && evaluation.revueEcheanceAt != null && (
+        <div
+          className="p-4 rounded-xl flex items-center gap-3"
+          style={{ background: colors.surfaceContainerHighest, border: `1px solid ${colors.outlineVariant}` }}
+        >
+          <span className="material-symbols-outlined" style={{ color: colors.primary }}>event_available</span>
+          <span className="text-sm font-semibold" style={{ color: colors.onSurface }}>
+            {t('validation.echeanceRevue', { date: new Date(evaluation.revueEcheanceAt).toLocaleDateString() })}
+          </span>
+        </div>
+      )}
 
       {/* Main content grid */}
       <div className="grid grid-cols-12 gap-6">
@@ -331,8 +409,27 @@ export function ValidationPage() {
           </div>
         )}
 
+        {/* Auto-validation panel (responsable_asn, sa propre évaluation en_cours) */}
+        {isAutoValidation && (
+          <div className="col-span-12 lg:col-span-4 lg:col-start-9">
+            <ValidationSignature
+              validatorName={profile?.prenom && profile?.nom ? `${profile.prenom} ${profile.nom}` : user?.email ?? ''}
+              validatorEmail={user?.email ?? ''}
+              hasEssentialKO={essentielsKOCodes.length > 0}
+              onValidate={handleAutoValidate}
+              onRequestRevision={() => { /* n/a en auto-validation */ }}
+              hideRevision
+              requierePv
+              onUploadPv={handleUploadPv}
+              pvUploaded={pvComitePath != null}
+              pvUploading={pvUploading}
+              loading={validating}
+            />
+          </div>
+        )}
+
         {/* Read-only message for non-validators */}
-        {!canValidate && (
+        {!canValidate && !isAutoValidation && evaluation.statut !== 'validee' && (
           <div className="col-span-12">
             <div
               className="p-4 rounded-xl text-center text-sm"
