@@ -48,17 +48,15 @@ export function useScores(evalId: string | undefined) {
   } = useEvaluationStore();
 
   const referentiel = useReferentielStore(s => s.referentiel());
+  const campagneMode = useEvaluationStore(s => s.campagneMode);
 
   useEffect(() => {
     if (!evalId || !referentiel) return;
-
-    const allCriteres = referentiel.dimensions.flatMap(d => d.criteres.filter(c => c.actif));
-    const essentiels = allCriteres.filter(c => c.essentiel).map(c => c.code);
-
-    const unsubscribe = subscribeToScores(evalId, allCriteres.length, essentiels);
+    // Le scoring (avancement, essentiels KO) suit le mode de la campagne.
+    const unsubscribe = subscribeToScores(evalId, referentiel, campagneMode);
     return unsubscribe;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [evalId, referentiel]);
+  }, [evalId, referentiel, campagneMode]);
 
   return {
     scores,

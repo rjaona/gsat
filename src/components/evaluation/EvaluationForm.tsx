@@ -8,7 +8,7 @@ import { useEvaluationActions, useScores, useEvaluationDetail } from '@/hooks/us
 import { useReferentielStore } from '@/stores/referentielStore';
 import { uploadPreuve, calculerScores } from '@/services/evaluationService';
 import { useAuthStore } from '@/stores/authStore';
-import type { ScoreInput } from '@/stores/evaluationStore';
+import { useEvaluationStore, type ScoreInput } from '@/stores/evaluationStore';
 
 interface EvaluationFormProps {
   evalId: string;
@@ -19,6 +19,7 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const referentiel = useReferentielStore(s => s.referentiel());
+  const campagneMode = useEvaluationStore(s => s.campagneMode);
 
   // Souscrit en temps réel à l'évaluation — indispensable pour alimenter le store
   useEvaluationDetail(evalId);
@@ -52,10 +53,11 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
       ? calculerScores(
           scores,
           referentiel.dimensions.map(d => d.code),
-          code => referentiel.dimensions.find(d => d.code === code)?.criteres ?? []
+          code => referentiel.dimensions.find(d => d.code === code)?.criteres ?? [],
+          campagneMode
         )
       : { global: 0, parDimension: {} },
-    [scores, referentiel]
+    [scores, referentiel, campagneMode]
   );
 
   const handleScoreChange = useCallback(
