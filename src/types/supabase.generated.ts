@@ -1319,6 +1319,13 @@ export type Database = {
     Functions: {
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       fn_cloturer_evaluations_non_revues: { Args: never; Returns: number }
+      fn_moyenne_nationale: {
+        Args: { p_org_id: string }
+        Returns: {
+          score_global: number
+          score_par_dimension: Json
+        }[]
+      }
       fn_write_audit_log: {
         Args: {
           p_action: string

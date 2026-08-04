@@ -48,6 +48,9 @@ export function DashboardFaritanyPage() {
 
   const kpis: KpiItem[] = [
     { label: t('pages.dashboardFaritany.scoreGlobal'), value: stats ? Math.round(stats.scoreGlobal) : '—', subLabel: '/100', variant: scoreVariant(stats?.scoreGlobal) },
+    // Évolution différée : pas de snapshot historique dans dashboard_stats, mais la
+    // source existe (diff des scoreGlobal des deux dernières évaluations clôturées,
+    // un cycle = une campagne). À câbler dans une slice dédiée.
     { label: t('pages.dashboardFaritany.evolution'), value: '—', subLabel: t('pages.dashboardFaritany.evolutionIndisponible') },
     { label: t('pages.dashboardFaritany.alertesCritiques'), value: nbCritiques, variant: nbCritiques > 0 ? 'danger' : 'success' },
     { label: t('pages.dashboardFaritany.moyenneNationale'), value: moyenne ? Math.round(moyenne.scoreGlobal) : '—', subLabel: '/100' },

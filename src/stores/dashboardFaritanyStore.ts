@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import type { DashboardStats, Alerte, Action } from '@/types';
-import { getDashboardStats } from '@/services/dashboardService';
-import { getOrganisation } from '@/services/organisationService';
+import { getDashboardStats, getMoyenneNationale, type MoyenneNationale } from '@/services/dashboardService';
 import { listAlertesOuvertes } from '@/services/alerteService';
 import { listPlansByOrg, listActions } from '@/services/planActionService';
 import { getErpSnapshotCourant, type ErpSnapshot } from '@/services/erpService';
@@ -13,8 +12,8 @@ import { getErpSnapshotCourant, type ErpSnapshot } from '@/services/erpService';
  */
 interface DashboardFaritanyState {
   stats: DashboardStats | null;
-  /** Stats de l'OSN parente = moyenne consolidée des Faritany (bandeau radar). */
-  moyenne: DashboardStats | null;
+  /** Agrégat national (OSN parente) = moyenne consolidée des Faritany (bandeau radar). */
+  moyenne: MoyenneNationale | null;
   alertes: Alerte[];
   actions: Action[];
   erp: ErpSnapshot | null;
@@ -36,17 +35,14 @@ export const useDashboardFaritanyStore = create<DashboardFaritanyState>((set) =>
   load: async (orgId) => {
     set({ loading: true, error: null });
     try {
-      const [org, stats, alertes, plans, erp] = await Promise.all([
-        getOrganisation(orgId),
+      const [stats, moyenne, alertes, plans, erp] = await Promise.all([
         getDashboardStats(orgId),
+        // Agrégat national via RPC SECURITY DEFINER (la RLS bloque la lecture montante directe).
+        getMoyenneNationale(orgId).catch(() => null),
         listAlertesOuvertes(orgId).catch(() => [] as Alerte[]),
         listPlansByOrg(orgId).catch(() => []),
         getErpSnapshotCourant(orgId).catch(() => null),
       ]);
-      // Moyenne nationale = stats de l'OSN parente (peut ne pas être encore consolidée).
-      const moyenne = org?.parentId
-        ? await getDashboardStats(org.parentId).catch(() => null)
-        : null;
       // Actions du plan le plus récent de l'organisation.
       const planRecent = [...plans].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
       const actions: Action[] = planRecent

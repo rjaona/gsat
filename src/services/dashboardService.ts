@@ -88,6 +88,28 @@ export async function getDashboardStats(orgId: string): Promise<DashboardStats |
   return data ? rowToStats(data as Record<string, unknown>) : null;
 }
 
+export interface MoyenneNationale {
+  scoreGlobal: number;
+  scoreParDimension: Record<string, number>;
+}
+
+/**
+ * Agrégat national (score global + par dimension) de l'OSN parente d'une org.
+ * Passe par la fonction SECURITY DEFINER `fn_moyenne_nationale` : la RLS de
+ * dashboard_stats interdit à une ASN la lecture directe de la ligne de son OSN,
+ * et la fonction ne rend QUE l'agrégat non sensible (pas les scores par Faritany).
+ */
+export async function getMoyenneNationale(orgId: string): Promise<MoyenneNationale | null> {
+  const { data, error } = await supabase.rpc('fn_moyenne_nationale', { p_org_id: orgId });
+  if (error) throw error;
+  const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    scoreGlobal: (row['score_global'] as number) ?? 0,
+    scoreParDimension: (row['score_par_dimension'] as Record<string, number> | null) ?? {},
+  };
+}
+
 // ── Évaluations récentes ──────────────────────────────────────────────────────
 
 export async function getEvaluationsRecentes(

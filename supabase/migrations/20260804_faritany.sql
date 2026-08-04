@@ -168,6 +168,25 @@ ORDER BY org_id, periode DESC, collected_at DESC;
 -- snapshots d'un autre Faritany). La vue doit respecter erp_snap_select.
 ALTER VIEW v_erp_snapshot_courant SET (security_invoker = on);
 
+-- Moyenne nationale exposée aux ASN : la RLS de dashboard_stats interdit à une
+-- ASN de lire la ligne consolidée de son OSN (lecture montante). Cette fonction
+-- SECURITY DEFINER ne rend QUE l'agrégat non sensible (score global + par
+-- dimension) de l'OSN parente — jamais scores_asn/essentiels_ko_par_org, qui
+-- révéleraient les autres Faritany (cf. règle d'isolation Faritany A ≠ B).
+CREATE OR REPLACE FUNCTION public.fn_moyenne_nationale(p_org_id uuid)
+RETURNS TABLE (score_global numeric, score_par_dimension jsonb)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT ds.score_global, ds.score_par_dimension
+  FROM dashboard_stats ds
+  JOIN organisations self ON self.parent_id = ds.org_id
+  WHERE self.id = p_org_id
+$$;
+REVOKE ALL ON FUNCTION public.fn_moyenne_nationale(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.fn_moyenne_nationale(uuid) TO authenticated;
+
 
 -- =============================================================================
 -- PARTIE 5 — Moteur d'alertes et bibliothèque d'actions types
