@@ -163,6 +163,11 @@ SELECT DISTINCT ON (org_id)
 FROM erp_snapshots
 ORDER BY org_id, periode DESC, collected_at DESC;
 
+-- security_invoker : sans cela la vue s'exécute avec les droits de son
+-- propriétaire et CONTOURNE la RLS de erp_snapshots (elle exposerait les
+-- snapshots d'un autre Faritany). La vue doit respecter erp_snap_select.
+ALTER VIEW v_erp_snapshot_courant SET (security_invoker = on);
+
 
 -- =============================================================================
 -- PARTIE 5 — Moteur d'alertes et bibliothèque d'actions types
