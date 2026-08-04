@@ -46,6 +46,9 @@ export const mg: DeepPartial<typeof fr> = {
     },
   },
   evaluation: {
+    extension: 'Fanampiny',
+    sectionExtension: 'Fanampiny — tsy tafiditra amin’ny isa',
+    erpDonnees: 'Angona ERPTEM tamin’ny {{date}} : {{valeur}}',
     notes: {
       na: 'Tsy mihatra',
       naAide: "Tsy mihatra amin'ity vondrona ity — tsy tafiditra amin'ny isa ny fepetra.",

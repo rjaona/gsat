@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CritereItem } from './CritereItem';
-import type { DimensionDef, Score } from '@/types';
+import type { DimensionDef, Score, CritereDef } from '@/types';
 import type { CritereKO, ScoreInput } from '@/stores/evaluationStore';
+import type { ModeCampagne } from '@/services/scoring';
+import type { ErpSnapshot } from '@/services/erpService';
 
 interface DimensionSectionProps {
   dimension: DimensionDef;
@@ -14,6 +16,8 @@ interface DimensionSectionProps {
   uploadProgress: Record<string, number>;
   disabled?: boolean;
   defaultOpen?: boolean;
+  mode?: ModeCampagne;
+  erpSnapshot?: ErpSnapshot | null;
 }
 
 function scoreStyle(score: number): { color: string; bg: string } {
@@ -39,17 +43,23 @@ export function DimensionSection({
   uploadProgress,
   disabled = false,
   defaultOpen = false,
+  mode = 'complet',
+  erpSnapshot = null,
 }: DimensionSectionProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language.startsWith('en') ? 'en' : 'fr';
   const [open, setOpen] = useState(defaultOpen);
+  const [extOpen, setExtOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   const activeCriteres = dimension.criteres.filter(c => c.actif);
-  const nbRenseignes = activeCriteres.filter(c => {
-    const s = scores[c.code];
-    return s?.note !== null && s?.note !== undefined;
-  }).length;
+  const extensionCriteres = activeCriteres.filter(c => c.socle === false);
+  // En mode socle, les extensions n'entrent pas dans le score : liste principale = socle seul.
+  const principales = mode === 'socle' ? activeCriteres.filter(c => c.socle !== false) : activeCriteres;
+  const enExtension = mode === 'socle' ? extensionCriteres : [];
+
+  // Avancement de la dimension : une ligne présente (N/A compris) compte comme répondu.
+  const nbRenseignes = principales.filter(c => c.code in scores).length;
 
   const koInDim = criteresKO.filter(k =>
     activeCriteres.some(c => c.code === k.critereCode)
@@ -57,9 +67,27 @@ export function DimensionSection({
   const hasKO = koInDim.length > 0;
 
   const { color: scoreColor, bg: scoreBg } = scoreStyle(Math.round(scoreDim));
-  const progressWidth = activeCriteres.length > 0
-    ? Math.round((nbRenseignes / activeCriteres.length) * 100)
+  const progressWidth = principales.length > 0
+    ? Math.round((nbRenseignes / principales.length) * 100)
     : 0;
+
+  const renderCritere = (critere: CritereDef) => {
+    const ko = criteresKO.find(k => k.critereCode === critere.code);
+    return (
+      <CritereItem
+        key={critere.code}
+        critere={critere}
+        score={scores[critere.code]}
+        onScoreChange={onScoreChange}
+        onUploadPreuve={onUploadPreuve}
+        uploadProgress={uploadProgress[critere.code]}
+        disabled={disabled}
+        isKO={!!ko}
+        commentaireManquant={ko?.commentaireManquant ?? false}
+        erpSnapshot={erpSnapshot}
+      />
+    );
+  };
 
   return (
     <div
@@ -166,7 +194,7 @@ export function DimensionSection({
             whiteSpace: 'nowrap',
           }}
         >
-          {nbRenseignes}/{activeCriteres.length}
+          {nbRenseignes}/{principales.length}
         </span>
 
         {/* Chevron */}
@@ -209,22 +237,31 @@ export function DimensionSection({
       {/* ── Contenu déroulant ── */}
       {open && (
         <div style={{ padding: '16px 20px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {activeCriteres.map(critere => {
-            const ko = criteresKO.find(k => k.critereCode === critere.code);
-            return (
-              <CritereItem
-                key={critere.code}
-                critere={critere}
-                score={scores[critere.code]}
-                onScoreChange={onScoreChange}
-                onUploadPreuve={onUploadPreuve}
-                uploadProgress={uploadProgress[critere.code]}
-                disabled={disabled}
-                isKO={!!ko}
-                commentaireManquant={ko?.commentaireManquant ?? false}
-              />
-            );
-          })}
+          {principales.map(renderCritere)}
+
+          {/* Extensions (mode socle) — saisissables mais hors score */}
+          {enExtension.length > 0 && (
+            <div style={{ marginTop: '4px', borderTop: '1px dashed var(--border)', paddingTop: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setExtOpen(v => !v)}
+                aria-expanded={extOpen}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                  background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 0', textAlign: 'left',
+                }}
+              >
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', transform: extOpen ? 'rotate(90deg)' : 'none', transition: 'transform 150ms ease' }} aria-hidden="true">›</span>
+                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>{t('evaluation.sectionExtension')}</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({enExtension.length})</span>
+              </button>
+              {extOpen && (
+                <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {enExtension.map(renderCritere)}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

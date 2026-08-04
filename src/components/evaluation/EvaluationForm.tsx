@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { DimensionSection } from './DimensionSection';
@@ -7,6 +7,7 @@ import { EvaluationWorkflowBadge } from './EvaluationWorkflowBadge';
 import { useEvaluationActions, useScores, useEvaluationDetail } from '@/hooks/useEvaluation';
 import { useReferentielStore } from '@/stores/referentielStore';
 import { uploadPreuve, calculerScores } from '@/services/evaluationService';
+import { getErpSnapshotCourant, type ErpSnapshot } from '@/services/erpService';
 import { useAuthStore } from '@/stores/authStore';
 import { useEvaluationStore, type ScoreInput } from '@/stores/evaluationStore';
 
@@ -46,6 +47,16 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [erpSnapshot, setErpSnapshot] = useState<ErpSnapshot | null>(null);
+
+  // Snapshot ERP courant de l'organisation évaluée — informatif, souvent absent.
+  useEffect(() => {
+    const orgId = evaluation?.orgId;
+    if (!orgId) return;
+    let alive = true;
+    void getErpSnapshotCourant(orgId).then(s => { if (alive) setErpSnapshot(s); }).catch(() => { /* pas d'ERP */ });
+    return () => { alive = false; };
+  }, [evaluation?.orgId]);
 
   // Calcul du score global et par dimension en temps réel
   const scoreResult = useMemo(
@@ -225,6 +236,8 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
             uploadProgress={uploadProgress}
             disabled={isReadOnly || loading}
             defaultOpen={idx === 0}
+            mode={campagneMode}
+            erpSnapshot={erpSnapshot}
           />
         ))}
       </div>
