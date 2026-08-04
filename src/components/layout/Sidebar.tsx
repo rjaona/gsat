@@ -13,6 +13,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/dashboard/asn',    icon: 'domain',        labelKey: 'nav.asnLevel' },
+  { to: '/dashboard/faritany', icon: 'insights',    labelKey: 'nav.faritanyLevel' },
   { to: '/dashboard/osn',    icon: 'public',        labelKey: 'nav.osnLevel' },
   { to: '/dashboard/global', icon: 'language',      labelKey: 'nav.globalLevel' },
   { to: '/evaluation',       icon: 'assignment',    labelKey: 'nav.evaluation' },

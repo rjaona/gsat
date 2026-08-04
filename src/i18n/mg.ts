@@ -33,6 +33,16 @@ export const mg: DeepPartial<typeof fr> = {
     date: 'Daty',
     actions: 'Asa',
   },
+  pages: {
+    dashboardFaritany: {
+      title: 'Tabilaon’ny Faritany',
+      scoreGlobal: 'Isa ankapobeny',
+      alertes: 'Fampitandremana',
+      alertesCritiques: 'Fampitandremana lehibe',
+      moyenneNationale: 'Salan’isan’ny Faritany',
+      planAction: 'Drafitr’asa',
+    },
+  },
   campagne: {
     badgeSocle: 'Fototra',
     form: {
