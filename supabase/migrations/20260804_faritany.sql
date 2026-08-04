@@ -691,6 +691,33 @@ CREATE POLICY evals_update_resp_asn ON evaluations
     AND statut IN ('brouillon', 'en_cours', 'validee')  -- validee = auto-validation autorisée
   );
 
+-- Revue nationale : un relecteur (OSN / région / admin) arbitre une évaluation
+-- VALIDÉE de son sous-arbre → clôturée (approuvée) ou renvoyée en_cours (révision).
+-- La policy evals_update de base a un WITH CHECK NUL (donc = USING, qui exige
+-- statut IN soumise/validee ET l'org du relecteur) et rejette ce résultat :
+-- d'où cette policy dédiée, sans laquelle revoirEvaluation échoue en RLS.
+CREATE POLICY evals_update_revue ON evaluations
+  FOR UPDATE TO authenticated
+  USING (
+    statut = 'validee'
+    AND (
+      (auth.jwt() ->> 'role') = 'admin_global'
+      OR ((auth.jwt() ->> 'role') = 'responsable_osn' AND EXISTS (
+            SELECT 1 FROM organisations o
+            WHERE o.id = evaluations.org_id
+              AND (o.id = (auth.jwt() ->> 'org_id')::uuid
+                   OR o.parent_id = (auth.jwt() ->> 'org_id')::uuid)))
+      OR ((auth.jwt() ->> 'role') = 'responsable_region' AND EXISTS (
+            SELECT 1 FROM organisations o
+            JOIN organisations p ON p.id = o.parent_id
+            WHERE o.id = evaluations.org_id
+              AND p.parent_id = (auth.jwt() ->> 'org_id')::uuid))
+    )
+  )
+  WITH CHECK (
+    statut IN ('cloturee', 'en_cours')   -- les deux issues de l'arbitrage
+  );
+
 -- Garde-fou serveur : le PV de comité est obligatoire pour auto-valider,
 -- et l'échéance de revue est posée automatiquement.
 CREATE OR REPLACE FUNCTION fn_garde_auto_validation()

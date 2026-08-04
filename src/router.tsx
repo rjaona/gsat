@@ -35,6 +35,9 @@ const EvaluationDetailPage = lazy(() =>
 const CyclesPage = lazy(() =>
   import('@/pages/admin/CyclesPage').then(m => ({ default: m.CyclesPage }))
 )
+const RevuePage = lazy(() =>
+  import('@/pages/admin/RevuePage').then(m => ({ default: m.RevuePage }))
+)
 const UsersPage = lazy(() =>
   import('@/pages/admin/UsersPage').then(m => ({ default: m.UsersPage }))
 )
@@ -109,6 +112,7 @@ const LazyEvaluationList = withSuspense(EvaluationListPage)
 const LazyNewEvaluation = withSuspense(NewEvaluationPage)
 const LazyEvaluationDetail = withSuspense(EvaluationDetailPage)
 const LazyCycles = withSuspense(CyclesPage)
+const LazyRevue = withSuspense(RevuePage)
 const LazyUsers = withSuspense(UsersPage)
 const LazyReferential = withSuspense(ReferentialPage)
 const LazyAudit = withSuspense(AuditPage)
@@ -178,6 +182,10 @@ export const router = createBrowserRouter([
       {
         path: 'admin/cycles',
         element: <RoleGuard roles={['admin_global', 'responsable_osn']}><LazyCycles /></RoleGuard>,
+      },
+      {
+        path: 'admin/revue',
+        element: <RoleGuard roles={['admin_global', 'responsable_osn', 'responsable_region']}><LazyRevue /></RoleGuard>,
       },
       {
         path: 'admin/referential',
