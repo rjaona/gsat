@@ -13,6 +13,9 @@ function rowToStats(row: Record<string, unknown>): DashboardStats {
     scoreParDimension:    ((row['score_par_dimension']    as Record<string, number>) ?? {}),
     criteresEssentielsKO: ((row['criteres_essentiels_ko'] as string[]) ?? []),
     updatedAt:            row['updated_at']               as string,
+    // Version du référentiel consolidé : source de vérité pour DashboardAsnPage
+    // (qui s'abonne au référentiel via stats.referentielVersion).
+    ...(row['referentiel_version'] != null ? { referentielVersion: row['referentiel_version'] as string } : {}),
     ...(nbAsn              != null ? { nbAsn }              : {}),
     ...(scoresAsn          != null ? { scoresAsn }          : {}),
     ...(tauxCompletionEval != null ? { tauxCompletionEval } : {}),
