@@ -203,7 +203,9 @@ export function ValidationPage() {
     setPvUploading(true)
     setError(null)
     try {
-      const path = `${orgId}/pv-comite/${evaluation.id}/${Date.now()}-${file.name}`
+      // Même convention de chemin que uploadPreuve → hérite de la même RLS Storage.
+      const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+      const path = `preuves/${orgId}/${evaluation.campagneId}/${evaluation.id}/pv-comite/${fileName}`
       await uploadEvidence(path, file)
       setPvComitePath(path)
     } catch (err) {
@@ -231,6 +233,9 @@ export function ValidationPage() {
         role,
         userOrgId: orgId,
         evalOrgId: evaluation.orgId,
+        // TODO(P5) : recipientId = responsable national/OSN pour la notification
+        // « validée avec essentiels KO » (CLAUDE.md). Non résolu ici → sans
+        // destinataire, autoValiderEvaluation n'émet pas la notification.
       })
       await writeAuditEntry({
         userId: user.id,
