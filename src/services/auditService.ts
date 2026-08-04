@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { AuditEntry, AuditAction } from '@/types'
+import type { Json } from '@/types/supabase.generated'
 
 const TABLE = 'audit_log'
 const PAGE_SIZE = 25
@@ -35,7 +36,9 @@ export async function writeAuditEntry(
       p_action:      entry.action,
       p_resource:    entry.resource,
       p_resource_id: entry.resourceId,
-      p_metadata:    entry.metadata ?? null,
+      // Frontière DB : la metadata applicative (Record<string, unknown>) est
+      // toujours JSON-sérialisable ; le type généré l'exige en Json.
+      p_metadata:    (entry.metadata ?? null) as Json,
     })
     if (error) throw error
   } catch (err) {

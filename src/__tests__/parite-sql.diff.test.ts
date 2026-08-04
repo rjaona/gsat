@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { calculerScoreDimension, calculerScoreGlobal, getCriteresEssentielsKO } from '@/services/scoring';
-import ref_db from './src/ref_db.json';
+// Le référentiel far_v1_0 est déjà versionné dans le repo ; on en tire le tableau
+// de dimensions (le JSON est un objet {meta, referentiel, dimensions}).
+import raw from '../data/far_v1_0.json';
+const ref_db = raw.dimensions;
 
 const PG = ['-h','127.0.0.1','-p','5433','-U','postgres','-d','gsat','-tAc'];
 const sql = (q: string) => execFileSync('psql', [...PG, q], { encoding: 'utf8' }).trim();
