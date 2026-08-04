@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Read(//home/rjaona/gsat-v2/**)",
+      "Bash(npx tsc:*)",
+      "Bash(npx --prefix /home/rjaona/gsat-v2 tsc --project /home/rjaona/gsat-v2/tsconfig.app.json --noEmit)",
+      "Bash(grep -v '^[[:space:]]*$')",
+      "Bash(ls /home/rjaona/gsat-v2/*.config*)",
+      "Bash(npm list:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

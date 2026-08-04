@@ -1,0 +1,1803 @@
+{
+  "meta": {
+    "generatedAt": "2026-08-04",
+    "source": "GSAT-Faritany Note de conception v0.3 — dérivé de GSAT V3.0",
+    "version": "far_v1_0",
+    "parentVersion": "v3_0",
+    "niveau": "ASN",
+    "notes": [
+      "76 criteres repartis en 10 dimensions, dont 42 socle et 17 essentiels",
+      "source_codes = codes des criteres GSAT V3.0 dont chaque critere Faritany derive",
+      "libelle.en et libelle.mg vides — a completer (traduction humaine, cf. note §3.5)",
+      "Cycle 1 : campagne en mode socle — les criteres socle=false sont saisissables mais hors score",
+      "indicateur_erp : cles proposees, a rapprocher du modele ERPTEM reel au moment de l import"
+    ]
+  },
+  "referentiel": {
+    "version": "far_v1_0",
+    "nom": {
+      "fr": "GSAT-Faritany v1.0",
+      "en": "GSAT-Faritany v1.0",
+      "mg": "GSAT-Faritany v1.0"
+    },
+    "parentVersion": "v3_0",
+    "niveau": "ASN",
+    "actif": false
+  },
+  "dimensions": [
+    {
+      "code": "D01",
+      "ordre": 1,
+      "nom": {
+        "fr": "Faritany ↔ National : obligations statutaires",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F101",
+          "ordre": 1,
+          "libelle": {
+            "fr": "Le Faritany a transmis son rapport annuel d'activités et ses effectifs au niveau national dans les délais fixés.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "104"
+          ],
+          "indicateurErp": [
+            "date_dernier_rapport_transmis"
+          ]
+        },
+        {
+          "code": "F102",
+          "ordre": 2,
+          "libelle": {
+            "fr": "Le Faritany archive ses documents officiels (PV, listes de membres, rapports, courriers) de façon accessible à son équipe.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "108"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F103",
+          "ordre": 3,
+          "libelle": {
+            "fr": "Le Faritany est représenté aux instances nationales et son équipe est à jour de ses obligations statutaires envers le national.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "107",
+            "202"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F104",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Le Faritany est déclaré ou reconnu auprès des autorités administratives locales selon les exigences en vigueur.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "101"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F105",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Le Faritany utilise le nom, le logo et la charte TEM/OMMS conformément aux règles nationales.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "105",
+            "106",
+            "507"
+          ],
+          "indicateurErp": []
+        }
+      ]
+    },
+    {
+      "code": "D02",
+      "ordre": 2,
+      "nom": {
+        "fr": "Gouvernance du Faritany",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F201",
+          "ordre": 1,
+          "libelle": {
+            "fr": "Le Faritany tient son assemblée régionale conformément aux statuts et au règlement intérieur TEM.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "201"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F202",
+          "ordre": 2,
+          "libelle": {
+            "fr": "L'assemblée régionale assure la représentation de tous les Fivondronana actifs du Faritany.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "202"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F203",
+          "ordre": 3,
+          "libelle": {
+            "fr": "Le comité du Faritany se réunit régulièrement et assure le pilotage entre deux assemblées.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "203"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F204",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Les responsables du Faritany sont élus ou nommés selon un processus transparent, et leurs mandats sont à jour.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "205"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F205",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Le Faritany a désigné un responsable de la gestion courante, et les rôles de chaque membre de l'équipe sont définis par écrit et connus.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "204",
+            "208",
+            "209"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F206",
+          "ordre": 6,
+          "libelle": {
+            "fr": "Les procès‑verbaux des réunions et assemblées sont rédigés, approuvés et archivés.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "213"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F207",
+          "ordre": 7,
+          "libelle": {
+            "fr": "Des jeunes de moins de 30 ans siègent au comité du Faritany et participent effectivement aux décisions.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "206"
+          ],
+          "indicateurErp": [
+            "pct_jeunes_moins_30_comite"
+          ]
+        },
+        {
+          "code": "F208",
+          "ordre": 8,
+          "libelle": {
+            "fr": "Le Faritany dispose de mécanismes permettant aux jeunes membres d'exprimer leur avis.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "207"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F209",
+          "ordre": 9,
+          "libelle": {
+            "fr": "Le Faritany tient à jour son organigramme et la liste de ses Fivondronana et de ses unités avec leurs responsables.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "211"
+          ],
+          "indicateurErp": [
+            "nb_fivondronana",
+            "nb_unites_actives",
+            "nb_unites_dormantes"
+          ]
+        },
+        {
+          "code": "F210",
+          "ordre": 10,
+          "libelle": {
+            "fr": "Le Faritany applique la procédure nationale de gestion des plaintes et sait vers qui les orienter.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "212"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F211",
+          "ordre": 11,
+          "libelle": {
+            "fr": "Le Faritany rend compte de sa gestion à ses membres (rapports moral et financier présentés en assemblée).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "216"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F212",
+          "ordre": 12,
+          "libelle": {
+            "fr": "La composition de l'équipe Faritany reflète une diversité de genre et d'âge.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "215"
+          ],
+          "indicateurErp": [
+            "repartition_genre_adultes",
+            "repartition_age_adultes"
+          ]
+        }
+      ]
+    },
+    {
+      "code": "D03",
+      "ordre": 3,
+      "nom": {
+        "fr": "Planification du Faritany",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F301",
+          "ordre": 1,
+          "libelle": {
+            "fr": "Le Faritany dispose d'un plan de développement pluriannuel aligné sur le plan stratégique national TEM.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "301",
+            "302"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F302",
+          "ordre": 2,
+          "libelle": {
+            "fr": "Le Faritany établit chaque année un plan d'action et un calendrier d'activités avec responsables et échéances.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "306"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F303",
+          "ordre": 3,
+          "libelle": {
+            "fr": "L'avancement du plan est examiné au moins une fois par semestre en comité.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "307"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F304",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Le plan du Faritany a été élaboré en consultant les Fivondronana et les jeunes.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "303"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F305",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Le plan comporte des objectifs chiffrés (effectifs, formations, activités, ressources).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "305",
+            "310",
+            "311"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F306",
+          "ordre": 6,
+          "libelle": {
+            "fr": "Le Faritany a réalisé un diagnostic simple de ses forces et faiblesses pour construire son plan.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "309"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F307",
+          "ordre": 7,
+          "libelle": {
+            "fr": "Le plan du Faritany est diffusé et connu des responsables de Fivondronana et d'unité.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "314"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F308",
+          "ordre": 8,
+          "libelle": {
+            "fr": "Le Faritany développe des partenariats locaux au service de son plan (commune, écoles, confessions, entreprises, ONG).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "313"
+          ],
+          "indicateurErp": []
+        }
+      ]
+    },
+    {
+      "code": "D04",
+      "ordre": 4,
+      "nom": {
+        "fr": "Intégrité et protection des jeunes",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F401",
+          "ordre": 1,
+          "libelle": {
+            "fr": "La politique nationale de protection des jeunes (Safe from Harm) est diffusée et connue de tous les responsables du Faritany.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "401"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F402",
+          "ordre": 2,
+          "libelle": {
+            "fr": "Le Faritany a désigné un point focal protection, et la procédure de signalement d'incident est connue de tous les chefs.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "402"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F403",
+          "ordre": 3,
+          "libelle": {
+            "fr": "Tout adulte en contact avec les jeunes fait l'objet d'une vérification avant sa nomination.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "403"
+          ],
+          "indicateurErp": [
+            "pct_adultes_verifies"
+          ]
+        },
+        {
+          "code": "F404",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Tous les responsables du Faritany ont signé le code de conduite TEM.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "404"
+          ],
+          "indicateurErp": [
+            "pct_adultes_code_signe"
+          ]
+        },
+        {
+          "code": "F405",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Les responsables du Faritany ont suivi la formation Safe from Harm dans les délais prescrits.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "406"
+          ],
+          "indicateurErp": [
+            "pct_adultes_formes_sfh"
+          ]
+        },
+        {
+          "code": "F406",
+          "ordre": 6,
+          "libelle": {
+            "fr": "Chaque activité à risque (camp, sortie, déplacement) fait l'objet d'une déclaration, d'autorisations parentales et d'une évaluation des risques.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "408"
+          ],
+          "indicateurErp": [
+            "nb_activites_12m",
+            "nb_camps_declares"
+          ]
+        },
+        {
+          "code": "F407",
+          "ordre": 7,
+          "libelle": {
+            "fr": "Le Faritany applique des règles de prévention des détournements (double signature, contrôle de caisse, justificatifs).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "405"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F408",
+          "ordre": 8,
+          "libelle": {
+            "fr": "Le Faritany veille à l'accès au scoutisme sans discrimination (genre, handicap, origine, confession, situation économique).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "407"
+          ],
+          "indicateurErp": []
+        }
+      ]
+    },
+    {
+      "code": "D05",
+      "ordre": 5,
+      "nom": {
+        "fr": "Communication et image locale",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F501",
+          "ordre": 1,
+          "libelle": {
+            "fr": "Le Faritany dispose de canaux de communication actifs avec ses Fivondronana et ses unités.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "501",
+            "502"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F502",
+          "ordre": 2,
+          "libelle": {
+            "fr": "Le Faritany transmet régulièrement des contenus (photos, comptes rendus) pour alimenter les canaux nationaux.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "503"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F503",
+          "ordre": 3,
+          "libelle": {
+            "fr": "Le Faritany anime une présence publique locale (réseau social, radio locale, presse régionale).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "504",
+            "506"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F504",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Le Faritany entretient des relations avec les autorités locales et valorise l'apport du scoutisme auprès d'elles.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "505"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F505",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Le Faritany respecte la charte graphique et l'identité visuelle TEM dans ses supports.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "507"
+          ],
+          "indicateurErp": []
+        }
+      ]
+    },
+    {
+      "code": "D06",
+      "ordre": 6,
+      "nom": {
+        "fr": "Les adultes du Faritany",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F601",
+          "ordre": 1,
+          "libelle": {
+            "fr": "Le Faritany tient un registre à jour de tous ses adultes, avec fonctions et formations suivies.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "611"
+          ],
+          "indicateurErp": [
+            "nb_adultes_registre",
+            "pct_fiches_adultes_completes"
+          ]
+        },
+        {
+          "code": "F602",
+          "ordre": 2,
+          "libelle": {
+            "fr": "Le Faritany organise ou fait suivre à ses responsables les formations du schéma national.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "602"
+          ],
+          "indicateurErp": [
+            "pct_adultes_formation_base"
+          ]
+        },
+        {
+          "code": "F603",
+          "ordre": 3,
+          "libelle": {
+            "fr": "Le ratio adultes/jeunes dans les unités est conforme aux normes de sécurité TEM.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "612"
+          ],
+          "indicateurErp": [
+            "ratio_adultes_jeunes"
+          ]
+        },
+        {
+          "code": "F604",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Chaque nouveau responsable est accueilli, accompagné et suivi dans sa prise de fonction.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "607"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F605",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Le Faritany recrute ses adultes en fonction de besoins identifiés et de profils définis.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "605",
+            "606"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F606",
+          "ordre": 6,
+          "libelle": {
+            "fr": "Le Faritany dispose de formateurs qualifiés ou d'un accès organisé à l'équipe nationale de formation.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "604"
+          ],
+          "indicateurErp": [
+            "nb_formateurs_qualifies"
+          ]
+        },
+        {
+          "code": "F607",
+          "ordre": 7,
+          "libelle": {
+            "fr": "Le Faritany fait un point annuel avec chaque responsable sur sa mission.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "608"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F608",
+          "ordre": 8,
+          "libelle": {
+            "fr": "Le Faritany reconnaît l'engagement de ses adultes (remerciements, distinctions, célébrations).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "609"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F609",
+          "ordre": 9,
+          "libelle": {
+            "fr": "Les départs et passations de fonction font l'objet d'une transmission organisée.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "610"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F610",
+          "ordre": 10,
+          "libelle": {
+            "fr": "L'équipe d'adultes du Faritany reflète une diversité de genre et d'âge.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "613"
+          ],
+          "indicateurErp": [
+            "repartition_genre_adultes",
+            "repartition_age_adultes"
+          ]
+        }
+      ]
+    },
+    {
+      "code": "D07",
+      "ordre": 7,
+      "nom": {
+        "fr": "Ressources et gestion financière",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F701",
+          "ordre": 1,
+          "libelle": {
+            "fr": "Le Faritany établit un budget annuel approuvé par son comité avant le début de l'exercice.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "701"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F702",
+          "ordre": 2,
+          "libelle": {
+            "fr": "Le Faritany tient une comptabilité simple à jour (caisse/banque) avec justificatifs classés.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "703"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F703",
+          "ordre": 3,
+          "libelle": {
+            "fr": "Les comptes du Faritany sont vérifiés chaque année et présentés en assemblée.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "702"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F704",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Le Faritany collecte les cotisations de ses Fivondronana et suit les arriérés.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "706"
+          ],
+          "indicateurErp": [
+            "taux_recouvrement_cotisations"
+          ]
+        },
+        {
+          "code": "F705",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Le Faritany reverse au national la part qui lui revient dans les délais fixés.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "707"
+          ],
+          "indicateurErp": [
+            "montant_du_national",
+            "jours_retard_reversement"
+          ]
+        },
+        {
+          "code": "F706",
+          "ordre": 6,
+          "libelle": {
+            "fr": "Le comité reçoit un point financier au moins deux fois par an.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "709"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F707",
+          "ordre": 7,
+          "libelle": {
+            "fr": "Le Faritany tient l'inventaire de son matériel et de ses biens et en assure l'entretien.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "710"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F708",
+          "ordre": 8,
+          "libelle": {
+            "fr": "Le Faritany diversifie ses ressources (cotisations, activités génératrices, dons locaux, subventions, partenariats).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "704",
+            "705"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F709",
+          "ordre": 9,
+          "libelle": {
+            "fr": "Le Faritany dispose d'une réserve lui permettant de faire face aux imprévus.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "708"
+          ],
+          "indicateurErp": []
+        }
+      ]
+    },
+    {
+      "code": "D08",
+      "ordre": 8,
+      "nom": {
+        "fr": "Programme des jeunes sur le terrain",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F801",
+          "ordre": 1,
+          "libelle": {
+            "fr": "Les unités (Antoko / Andiany) appliquent les éléments de la méthode scoute : système de patrouille, apprentissage par l'action, promesse et loi, progression personnelle, vie dans la nature, cadre symbolique, soutien adulte.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "801"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F802",
+          "ordre": 2,
+          "libelle": {
+            "fr": "Les branches TEM (Mavo, Maitso, Mena, Menafify) sont représentées dans le Faritany et fonctionnent.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "802"
+          ],
+          "indicateurErp": [
+            "couverture_branches"
+          ]
+        },
+        {
+          "code": "F803",
+          "ordre": 3,
+          "libelle": {
+            "fr": "La progression personnelle des jeunes est suivie, validée et célébrée.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "803"
+          ],
+          "indicateurErp": [
+            "pct_jeunes_progression_validee"
+          ]
+        },
+        {
+          "code": "F804",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Les unités utilisent le programme national (Fandaharana) et couvrent les cinq sehatra de développement.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "804",
+            "808"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F805",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Chaque unité réalise au moins une action de service à la communauté par an.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "810"
+          ],
+          "indicateurErp": [
+            "nb_actions_service_12m"
+          ]
+        },
+        {
+          "code": "F806",
+          "ordre": 6,
+          "libelle": {
+            "fr": "Les jeunes participent à la conception et à l'évaluation des activités du Faritany.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "806"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F807",
+          "ordre": 7,
+          "libelle": {
+            "fr": "Les activités intègrent des thématiques actuelles (environnement, santé, citoyenneté, ODD, compétences de vie).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "807"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F808",
+          "ordre": 8,
+          "libelle": {
+            "fr": "Le Faritany recueille l'avis des jeunes et des parents sur la qualité des activités.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "809"
+          ],
+          "indicateurErp": []
+        }
+      ]
+    },
+    {
+      "code": "D09",
+      "ordre": 9,
+      "nom": {
+        "fr": "Croissance du Faritany",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F901",
+          "ordre": 1,
+          "libelle": {
+            "fr": "Le Faritany tient un fichier des effectifs fiable et à jour (jeunes et adultes, par Fivondronana, par unité et par branche).",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "904"
+          ],
+          "indicateurErp": [
+            "effectif_jeunes",
+            "effectif_adultes"
+          ]
+        },
+        {
+          "code": "F902",
+          "ordre": 2,
+          "libelle": {
+            "fr": "Le Faritany s'est fixé un objectif chiffré de croissance et le suit.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "901"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F903",
+          "ordre": 3,
+          "libelle": {
+            "fr": "Les effectifs du Faritany ont progressé ou se sont maintenus sur les trois dernières années.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "902"
+          ],
+          "indicateurErp": [
+            "effectif_n1",
+            "effectif_n2",
+            "effectif_n3"
+          ]
+        },
+        {
+          "code": "F904",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Le Faritany ouvre ou réactive des unités pour atteindre de nouvelles communautés.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "903"
+          ],
+          "indicateurErp": [
+            "nb_unites_ouvertes_12m"
+          ]
+        },
+        {
+          "code": "F905",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Le Faritany suit son taux de rétention et agit sur les causes de départ.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "905"
+          ],
+          "indicateurErp": [
+            "taux_retention_12m"
+          ]
+        }
+      ]
+    },
+    {
+      "code": "D10",
+      "ordre": 10,
+      "nom": {
+        "fr": "Amélioration continue",
+        "en": "",
+        "mg": ""
+      },
+      "criteres": [
+        {
+          "code": "F1001",
+          "ordre": 1,
+          "libelle": {
+            "fr": "Le Faritany a réalisé son auto‑évaluation GSAT‑Faritany au cours des trois dernières années.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": true,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "1001"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F1002",
+          "ordre": 2,
+          "libelle": {
+            "fr": "Le Faritany a élaboré un plan d'action suite à sa dernière évaluation et en assure le suivi.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "1002"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F1003",
+          "ordre": 3,
+          "libelle": {
+            "fr": "Le Faritany constate des progrès mesurables sur les points faibles de l'évaluation précédente.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": true,
+          "actif": true,
+          "sourceCodes": [
+            "1003"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F1004",
+          "ordre": 4,
+          "libelle": {
+            "fr": "Le Faritany recueille les retours de ses Fivondronana, de ses unités et de ses membres pour améliorer son fonctionnement.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "1004"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F1005",
+          "ordre": 5,
+          "libelle": {
+            "fr": "Le Faritany partage ses bonnes pratiques avec les autres Faritany et participe aux échanges nationaux.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "1005",
+            "1006"
+          ],
+          "indicateurErp": []
+        },
+        {
+          "code": "F1006",
+          "ordre": 6,
+          "libelle": {
+            "fr": "Le Faritany sollicite l'appui technique du niveau national quand il en a besoin.",
+            "en": "",
+            "mg": ""
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": "",
+            "mg": ""
+          },
+          "essentiel": false,
+          "socle": false,
+          "actif": true,
+          "sourceCodes": [
+            "1007"
+          ],
+          "indicateurErp": []
+        }
+      ]
+    }
+  ]
+}

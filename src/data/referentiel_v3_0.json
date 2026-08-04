@@ -1,0 +1,1580 @@
+{
+  "version": "3.0",
+  "nom": {
+    "fr": "GSAT Version 3.0",
+    "en": "GSAT Version 3.0"
+  },
+  "actif": true,
+  "dimensions": [
+    {
+      "code": "D01",
+      "ordre": 1,
+      "nom": {
+        "fr": "OSN–OMMS : Obligations institutionnelles",
+        "en": "NSO–WOSM: Institutional Obligations"
+      },
+      "criteres": [
+        {
+          "code": "101",
+          "ordre": 1,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN est une entité légale ayant reçu une autorisation écrite valide d'une autorité compétente afin d'opérer dans le pays ou territoire où elle est officiellement établie.",
+            "en": "The NSO is a legal entity that has received valid written authorization from a competent authority to operate in the country or territory where it is officially established."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "102",
+          "ordre": 2,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "La Constitution de l'OSN inclut explicitement les éléments suivants : (a) Membre de l'OMMS et (b) Adhésion à la Constitution de l'OMMS.",
+            "en": "The NSO's Constitution explicitly includes the following elements: (a) Membership of WOSM and (b) Adherence to the WOSM Constitution."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "103",
+          "ordre": 3,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a considéré la révision de sa Constitution par le conseil national et/ou l'assemblée générale au moins une fois au cours des cinq dernières années afin de s'assurer de sa conformité avec la Constitution de l'OMMS et les cadres légaux nationaux.",
+            "en": "The NSO has considered reviewing its Constitution through the national council and/or general assembly at least once in the past five years to ensure compliance with the WOSM Constitution and national legal frameworks."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "104",
+          "ordre": 4,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a remis son rapport annuel de l'année précédente à l'OMMS et reste conforme aux exigences de l'OMMS en matière de rapportage.",
+            "en": "The NSO has submitted its annual report for the previous year to WOSM and remains compliant with WOSM reporting requirements."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "105",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a pris des mesures afin de garantir que les logos et marques scoutes soient légalement protégés dans le pays ou le territoire où elle est officiellement établie.",
+            "en": "The NSO has taken steps to ensure that Scout logos and trademarks are legally protected in the country or territory where it is officially established."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "106",
+          "ordre": 6,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Tout usage commercial ou non commercial de la Marque du Scoutisme Mondial possède une licence valide délivrée par l'OMMS.",
+            "en": "Any commercial or non-commercial use of the World Scouting Brand holds a valid licence issued by WOSM."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "107",
+          "ordre": 7,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN participe régulièrement aux Conférences Mondiales et Régionales du Scoutisme et veille à ce que sa délégation comprenne des jeunes de moins de 30 ans.",
+            "en": "The NSO regularly participates in World and Regional Scout Conferences and ensures that its delegation includes young people under 30 years of age."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "108",
+          "ordre": 8,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a défini et utilise un système de gestion de l'information qui permet d'identifier clairement tous types de documents officiels et d'assurer leur accessibilité à toutes les parties prenantes concernées.",
+            "en": "The NSO has defined and uses an information management system that clearly identifies all types of official documents and ensures their accessibility to all relevant stakeholders."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    },
+    {
+      "code": "D02",
+      "ordre": 2,
+      "nom": {
+        "fr": "Cadre de la gouvernance",
+        "en": "Governance Framework"
+      },
+      "criteres": [
+        {
+          "code": "201",
+          "ordre": 1,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une assemblée générale (ou équivalent) qui est l'organe suprême de décision et qui se réunit conformément à la Constitution de l'OSN.",
+            "en": "The NSO has a general assembly (or equivalent) that is the supreme decision-making body and meets in accordance with the NSO's Constitution."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "202",
+          "ordre": 2,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'assemblée générale assure une représentation équilibrée de l'ensemble des structures et niveaux de l'OSN.",
+            "en": "The general assembly ensures a balanced representation of all structures and levels of the NSO."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "203",
+          "ordre": 3,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un conseil national (ou organe équivalent) qui est responsable de la gouvernance stratégique entre les assemblées générales, et qui se réunit régulièrement.",
+            "en": "The NSO has a national council (or equivalent body) responsible for strategic governance between general assemblies, which meets on a regular basis."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "204",
+          "ordre": 4,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Les rôles et responsabilités du conseil national et de l'équipe de direction sont clairement définis, documentés et distincts.",
+            "en": "The roles and responsibilities of the national council and the management team are clearly defined, documented and distinct."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "205",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le conseil national comprend des membres élus ou nommés selon un processus transparent défini dans la Constitution.",
+            "en": "The national council comprises members elected or appointed through a transparent process defined in the Constitution."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "206",
+          "ordre": 6,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "Les jeunes (moins de 30 ans) participent activement aux processus de gouvernance et de prise de décision à tous les niveaux de l'OSN.",
+            "en": "Young people (under 30 years of age) actively participate in governance and decision-making processes at all levels of the NSO."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "207",
+          "ordre": 7,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose de mécanismes permettant aux jeunes membres d'exprimer leurs opinions et d'influencer les décisions de l'organisation.",
+            "en": "The NSO has mechanisms that allow young members to express their views and influence the organisation's decisions."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "208",
+          "ordre": 8,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un directeur général / secrétaire général (ou équivalent) responsable de la gestion opérationnelle quotidienne de l'organisation.",
+            "en": "The NSO has a Chief Executive / Secretary General (or equivalent) responsible for the day-to-day operational management of the organisation."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "209",
+          "ordre": 9,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une équipe de direction (personnel et/ou bénévoles) avec des responsabilités clairement définies pour les domaines clés de l'organisation.",
+            "en": "The NSO has a management team (staff and/or volunteers) with clearly defined responsibilities for the key areas of the organisation."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "210",
+          "ordre": 10,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a défini des politiques de gouvernance couvrant les conflits d'intérêt, la durée des mandats et la succession.",
+            "en": "The NSO has defined governance policies covering conflicts of interest, term limits and succession."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "211",
+          "ordre": 11,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un organigramme à jour qui reflète sa structure organisationnelle à tous les niveaux.",
+            "en": "The NSO has an up-to-date organisational chart that reflects its organisational structure at all levels."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "212",
+          "ordre": 12,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose de procédures écrites pour la gestion des plaintes et des réclamations internes.",
+            "en": "The NSO has written procedures for handling internal complaints and grievances."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "213",
+          "ordre": 13,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Les procès-verbaux des réunions du conseil national et de l'assemblée générale sont systématiquement rédigés, approuvés et archivés.",
+            "en": "Minutes of national council and general assembly meetings are systematically drafted, approved and archived."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "214",
+          "ordre": 14,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le conseil national procède à une évaluation régulière de ses propres performances et de son efficacité.",
+            "en": "The national council regularly evaluates its own performance and effectiveness."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "215",
+          "ordre": 15,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN promeut l'égalité des genres et la diversité dans ses organes de gouvernance.",
+            "en": "The NSO promotes gender equality and diversity in its governance bodies."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "216",
+          "ordre": 16,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a mis en place des mécanismes de redevabilité et de transparence envers ses membres et parties prenantes.",
+            "en": "The NSO has put in place accountability and transparency mechanisms towards its members and stakeholders."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "217",
+          "ordre": 17,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN veille à la conformité de ses pratiques de gouvernance avec les cadres légaux nationaux en vigueur.",
+            "en": "The NSO ensures that its governance practices comply with applicable national legal frameworks."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    },
+    {
+      "code": "D03",
+      "ordre": 3,
+      "nom": {
+        "fr": "Cadre stratégique",
+        "en": "Strategic Framework"
+      },
+      "criteres": [
+        {
+          "code": "301",
+          "ordre": 1,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un plan stratégique en cours de validité (couvrant une période de 3 à 5 ans) qui a été approuvé par l'organe de gouvernance compétent.",
+            "en": "The NSO has a current strategic plan (covering a period of 3 to 5 years) that has been approved by the relevant governance body."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "302",
+          "ordre": 2,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "Le plan stratégique de l'OSN est aligné sur la Vision 2023 de l'OMMS (ou la vision stratégique en vigueur) et intègre les priorités régionales.",
+            "en": "The NSO's strategic plan is aligned with WOSM's Vision 2023 (or the current strategic vision) and integrates regional priorities."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "303",
+          "ordre": 3,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le processus d'élaboration du plan stratégique a impliqué une consultation large des parties prenantes, y compris les jeunes membres.",
+            "en": "The strategic plan development process involved broad consultation with stakeholders, including young members."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "304",
+          "ordre": 4,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le plan stratégique comprend une mission, une vision et des valeurs clairement définies et communiquées.",
+            "en": "The strategic plan includes a clearly defined and communicated mission, vision and values."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "305",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le plan stratégique définit des objectifs mesurables avec des indicateurs de performance clés (KPIs).",
+            "en": "The strategic plan defines measurable objectives with key performance indicators (KPIs)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "306",
+          "ordre": 6,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose de plans opérationnels annuels déclinés du plan stratégique avec des responsabilités et échéances clairement attribuées.",
+            "en": "The NSO has annual operational plans derived from the strategic plan with clearly assigned responsibilities and deadlines."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "307",
+          "ordre": 7,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN effectue un suivi régulier de la mise en œuvre du plan stratégique et en rend compte au conseil national.",
+            "en": "The NSO regularly monitors the implementation of its strategic plan and reports on it to the national council."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "308",
+          "ordre": 8,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN procède à une évaluation à mi-parcours et/ou finale de son plan stratégique.",
+            "en": "The NSO conducts a mid-term and/or final evaluation of its strategic plan."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "309",
+          "ordre": 9,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une analyse de l'environnement (SWOT ou équivalent) récente qui a éclairé l'élaboration du plan stratégique.",
+            "en": "The NSO has a recent environmental analysis (SWOT or equivalent) that has informed the development of its strategic plan."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "310",
+          "ordre": 10,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le plan stratégique intègre des stratégies spécifiques pour la croissance et le développement des effectifs.",
+            "en": "The strategic plan incorporates specific strategies for membership growth and development."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "311",
+          "ordre": 11,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le plan stratégique intègre une stratégie de mobilisation des ressources financières et humaines.",
+            "en": "The strategic plan incorporates a strategy for mobilising financial and human resources."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "312",
+          "ordre": 12,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN intègre les Objectifs de Développement Durable (ODD) pertinents dans sa planification stratégique.",
+            "en": "The NSO integrates relevant Sustainable Development Goals (SDGs) into its strategic planning."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "313",
+          "ordre": 13,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une politique ou stratégie de partenariats avec des organisations externes alignée sur son plan stratégique.",
+            "en": "The NSO has a partnership policy or strategy with external organisations aligned with its strategic plan."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "314",
+          "ordre": 14,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le plan stratégique est diffusé et compris à tous les niveaux de l'organisation.",
+            "en": "The strategic plan is disseminated and understood at all levels of the organisation."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "315",
+          "ordre": 15,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN utilise les résultats de ses évaluations et analyses pour informer l'élaboration de ses futurs plans stratégiques.",
+            "en": "The NSO uses the results of its evaluations and analyses to inform the development of its future strategic plans."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    },
+    {
+      "code": "D04",
+      "ordre": 4,
+      "nom": {
+        "fr": "Gestion de l'intégrité",
+        "en": "Integrity Management"
+      },
+      "criteres": [
+        {
+          "code": "401",
+          "ordre": 1,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une politique de protection de l'enfance (Safe from Harm) approuvée, mise en œuvre et régulièrement révisée.",
+            "en": "The NSO has an approved, implemented and regularly reviewed child protection policy (Safe from Harm)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "402",
+          "ordre": 2,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a mis en place des procédures de signalement et de réponse aux incidents liés à la protection de l'enfance, connues de tous les adultes dans le scoutisme.",
+            "en": "The NSO has established reporting and response procedures for child protection incidents, which are known to all adults in Scouting."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "403",
+          "ordre": 3,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Tous les adultes en contact avec les jeunes font l'objet d'une vérification des antécédents conformément à la législation nationale et aux politiques de l'OSN.",
+            "en": "All adults in contact with young people are subject to background checks in accordance with national legislation and NSO policies."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "404",
+          "ordre": 4,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un code d'éthique ou de conduite applicable à tous ses membres, bénévoles et employés.",
+            "en": "The NSO has a code of ethics or conduct applicable to all its members, volunteers and employees."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "405",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a défini et met en œuvre des politiques de prévention de la fraude et de la corruption.",
+            "en": "The NSO has defined and implements policies for the prevention of fraud and corruption."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "406",
+          "ordre": 6,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispense une formation obligatoire sur la protection de l'enfance (Safe from Harm) à tous les adultes en contact régulier avec les jeunes.",
+            "en": "The NSO provides mandatory child protection training (Safe from Harm) to all adults in regular contact with young people."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "407",
+          "ordre": 7,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une politique d'inclusion et de non-discrimination qui garantit l'accès au scoutisme sans distinction de genre, origine, religion, handicap ou statut socio-économique.",
+            "en": "The NSO has an inclusion and non-discrimination policy that guarantees access to Scouting regardless of gender, origin, religion, disability or socio-economic status."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "408",
+          "ordre": 8,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a mis en place des mécanismes de gestion des risques couvrant les activités scoutes (sécurité physique, activités de plein air, rassemblements).",
+            "en": "The NSO has put in place risk management mechanisms covering Scout activities (physical safety, outdoor activities, gatherings)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    },
+    {
+      "code": "D05",
+      "ordre": 5,
+      "nom": {
+        "fr": "Communication, plaidoyer et image publique",
+        "en": "Communication and Public Image"
+      },
+      "criteres": [
+        {
+          "code": "501",
+          "ordre": 1,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une stratégie de communication interne et externe définie et mise en œuvre.",
+            "en": "The NSO has a defined and implemented internal and external communication strategy."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "502",
+          "ordre": 2,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN utilise une variété de canaux de communication (site web, réseaux sociaux, newsletters, médias traditionnels) pour atteindre ses différents publics.",
+            "en": "The NSO uses a variety of communication channels (website, social media, newsletters, traditional media) to reach its different audiences."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "503",
+          "ordre": 3,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un site web fonctionnel et régulièrement mis à jour, contenant des informations sur ses activités, sa gouvernance et ses contacts.",
+            "en": "The NSO has a functional and regularly updated website containing information about its activities, governance and contacts."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "504",
+          "ordre": 4,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN gère activement sa présence sur les réseaux sociaux avec un contenu régulier et adapté aux jeunes.",
+            "en": "The NSO actively manages its social media presence with regular content adapted for young people."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "505",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN mène des actions de plaidoyer auprès des décideurs publics pour promouvoir la valeur du scoutisme dans l'éducation non formelle.",
+            "en": "The NSO conducts advocacy actions with public decision-makers to promote the value of Scouting in non-formal education."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "506",
+          "ordre": 6,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a développé des partenariats avec des médias et/ou des personnalitiés publiques pour accroître la visibilité du scoutisme.",
+            "en": "The NSO has developed partnerships with media and/or public figures to increase the visibility of Scouting."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "507",
+          "ordre": 7,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une identité visuelle cohérente (charte graphique, logo, templates) utilisée à tous les niveaux de l'organisation.",
+            "en": "The NSO has a consistent visual identity (brand guidelines, logo, templates) used at all levels of the organisation."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "508",
+          "ordre": 8,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN mesure régulièrement la perception publique du scoutisme et utilise ces données pour améliorer son image.",
+            "en": "The NSO regularly measures public perception of Scouting and uses this data to improve its image."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    },
+    {
+      "code": "D06",
+      "ordre": 6,
+      "nom": {
+        "fr": "Adultes dans le Scoutisme",
+        "en": "Adults in Scouting"
+      },
+      "criteres": [
+        {
+          "code": "601",
+          "ordre": 1,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une politique des adultes dans le scoutisme qui définit le cycle de vie complet de l'adulte bénévole (recrutement, formation, accompagnement, reconnaissance, départ).",
+            "en": "The NSO has an Adults in Scouting policy that defines the complete volunteer lifecycle (recruitment, training, support, recognition, departure)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "602",
+          "ordre": 2,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un schéma de formation pour les adultes qui couvre tous les rôles clés (animateurs, responsables d'unité, formateurs, dirigeants).",
+            "en": "The NSO has a training scheme for adults covering all key roles (leaders, unit leaders, trainers, managers)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "603",
+          "ordre": 3,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le schéma de formation de l'OSN est aligné avec la politique mondiale de formation de l'OMMS (Badge de Bois et parcours de formation).",
+            "en": "The NSO's training scheme is aligned with WOSM's global training policy (Wood Badge and training pathways)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "604",
+          "ordre": 4,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN forme régulièrement des formateurs pour assurer la capacité de formation à tous les niveaux de l'organisation.",
+            "en": "The NSO regularly trains trainers to ensure training capacity at all levels of the organisation."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "605",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un processus de recrutement des adultes bénévoles basé sur les besoins identifiés et les compétences requises.",
+            "en": "The NSO has a volunteer adult recruitment process based on identified needs and required competencies."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "606",
+          "ordre": 6,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a défini des descriptions de rôles/postes pour les fonctions clés au sein de l'organisation (bénévoles et employés).",
+            "en": "The NSO has defined role/position descriptions for key functions within the organisation (volunteers and employees)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "607",
+          "ordre": 7,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN met en place un système d'accompagnement et de soutien continu pour les adultes dans leurs rôles (mentorat, coaching, supervision).",
+            "en": "The NSO provides a system of ongoing support for adults in their roles (mentoring, coaching, supervision)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "608",
+          "ordre": 8,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN procède à l'évaluation régulière des performances des adultes dans leurs rôles respectifs.",
+            "en": "The NSO regularly evaluates the performance of adults in their respective roles."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "609",
+          "ordre": 9,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un système de reconnaissance formelle des adultes bénévoles pour leur engagement et leurs réalisations.",
+            "en": "The NSO has a formal recognition system for adult volunteers for their commitment and achievements."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "610",
+          "ordre": 10,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un processus de transition et de départ organisé pour les adultes quittant leurs fonctions.",
+            "en": "The NSO has an organised transition and departure process for adults leaving their roles."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "611",
+          "ordre": 11,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN tient un registre à jour de tous les adultes bénévoles et employés avec leurs qualifications et formations suivies.",
+            "en": "The NSO maintains an up-to-date register of all adult volunteers and employees with their qualifications and completed training."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "612",
+          "ordre": 12,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le ratio adultes/jeunes dans les unités scoutes de l'OSN est conforme aux normes de sécurité et de qualité éducative.",
+            "en": "The adult-to-youth ratio in the NSO's Scout units complies with safety and educational quality standards."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "613",
+          "ordre": 13,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN promeut la diversité (genre, âge, origine) parmi ses adultes bénévoles à tous les niveaux.",
+            "en": "The NSO promotes diversity (gender, age, background) among its adult volunteers at all levels."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    },
+    {
+      "code": "D07",
+      "ordre": 7,
+      "nom": {
+        "fr": "Stabilité financière et mobilisation des ressources",
+        "en": "Financial Stability"
+      },
+      "criteres": [
+        {
+          "code": "701",
+          "ordre": 1,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un budget annuel approuvé par l'organe de gouvernance compétent avant le début de l'exercice financier.",
+            "en": "The NSO has an annual budget approved by the relevant governance body before the start of the financial year."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "702",
+          "ordre": 2,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "Les comptes financiers de l'OSN sont vérifiés annuellement par un auditeur externe indépendant et les rapports sont présentés à l'assemblée générale.",
+            "en": "The NSO's financial accounts are audited annually by an independent external auditor and reports are presented to the general assembly."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "703",
+          "ordre": 3,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose de procédures financières écrites couvrant les achats, les dépenses, la comptabilité et le contrôle interne.",
+            "en": "The NSO has written financial procedures covering procurement, expenditure, accounting and internal control."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "704",
+          "ordre": 4,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose de sources de revenus diversifiées (cotisations, subventions, dons, activités génératrices de revenus, partenariats).",
+            "en": "The NSO has diversified revenue sources (membership fees, grants, donations, income-generating activities, partnerships)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "705",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une stratégie de mobilisation des ressources financières alignée sur son plan stratégique.",
+            "en": "The NSO has a financial resource mobilisation strategy aligned with its strategic plan."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "706",
+          "ordre": 6,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN gère ses cotisations de manière transparente avec un système de collecte efficace et un suivi des arriérés.",
+            "en": "The NSO manages its membership fees transparently with an effective collection system and monitoring of arrears."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "707",
+          "ordre": 7,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN s'acquitte de ses obligations financières envers l'OMMS (cotisation annuelle) dans les délais prescrits.",
+            "en": "The NSO meets its financial obligations to WOSM (annual membership fee) within the prescribed deadlines."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "708",
+          "ordre": 8,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose de réserves financières suffisantes pour couvrir au minimum trois mois de fonctionnement.",
+            "en": "The NSO has sufficient financial reserves to cover a minimum of three months of operations."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "709",
+          "ordre": 9,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN établit des rapports financiers réguliers (trimestriels ou semestriels) présentés au conseil national.",
+            "en": "The NSO produces regular financial reports (quarterly or semi-annual) presented to the national council."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "710",
+          "ordre": 10,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN gère ses actifs (immobiliers, véhicules, équipements) de manière documentée avec un inventaire à jour.",
+            "en": "The NSO manages its assets (property, vehicles, equipment) in a documented manner with an up-to-date inventory."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "711",
+          "ordre": 11,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'assurances adéquates couvrant ses activités, ses biens et la responsabilité civile.",
+            "en": "The NSO has adequate insurance covering its activities, property and civil liability."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "712",
+          "ordre": 12,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN est en conformité avec les obligations fiscales et légales du pays en matière financière.",
+            "en": "The NSO is in compliance with the country's fiscal and legal obligations in financial matters."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    },
+    {
+      "code": "D08",
+      "ordre": 8,
+      "nom": {
+        "fr": "Programme des jeunes",
+        "en": "Youth Programme"
+      },
+      "criteres": [
+        {
+          "code": "801",
+          "ordre": 1,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un programme des jeunes basé sur les éléments fondamentaux de la méthode scoute (système de patrouille, apprentissage par l'action, cadre symbolique, engagement par la Promesse et la Loi, progression personnelle, vie dans la nature, soutien adulte).",
+            "en": "The NSO has a youth programme based on the fundamental elements of the Scout Method (patrol system, learning by doing, symbolic framework, commitment through Promise and Law, personal progression, nature activities, adult support)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "802",
+          "ordre": 2,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "Le programme des jeunes de l'OSN couvre toutes les tranches d'âge de 6 à 25 ans (ou la tranche d'âge définie par l'OSN) avec des sections/branches adaptées.",
+            "en": "The NSO's youth programme covers all age groups from 6 to 25 years (or the age range defined by the NSO) with appropriate sections/branches."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "803",
+          "ordre": 3,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le programme des jeunes intègre un système de progression personnelle permettant à chaque jeune de se développer à son rythme dans les différents domaines de développement.",
+            "en": "The youth programme includes a personal progression system allowing each young person to develop at their own pace across different development areas."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "804",
+          "ordre": 4,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le programme des jeunes couvre les domaines de développement suivants : physique, intellectuel, émotionnel, social, spirituel et caractère.",
+            "en": "The youth programme covers the following development areas: physical, intellectual, emotional, social, spiritual and character."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "805",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a révisé ou mis à jour son programme des jeunes au cours des dix dernières années pour rester pertinent par rapport aux besoins et aspirations des jeunes d'aujourd'hui.",
+            "en": "The NSO has reviewed or updated its youth programme within the last ten years to remain relevant to the needs and aspirations of today's young people."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "806",
+          "ordre": 6,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Les jeunes participent activement à la conception, la mise en œuvre et l'évaluation du programme des jeunes.",
+            "en": "Young people actively participate in the design, implementation and evaluation of the youth programme."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "807",
+          "ordre": 7,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN intègre dans son programme des jeunes des thématiques contemporaines pertinentes (environnement, paix, ODD, citoyenneté mondiale, santé, compétences de vie).",
+            "en": "The NSO integrates relevant contemporary themes in its youth programme (environment, peace, SDGs, global citizenship, health, life skills)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "808",
+          "ordre": 8,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN met à disposition des animateurs/chefs d'unité des ressources pédagogiques (manuels, fiches d'activités, guides) pour la mise en œuvre du programme.",
+            "en": "The NSO provides leaders/unit leaders with educational resources (handbooks, activity sheets, guides) for programme implementation."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "809",
+          "ordre": 9,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN évalue régulièrement l'impact de son programme des jeunes sur le développement personnel des membres.",
+            "en": "The NSO regularly evaluates the impact of its youth programme on the personal development of members."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "810",
+          "ordre": 10,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "Le programme des jeunes de l'OSN favorise l'engagement communautaire et le service à autrui comme composante essentielle de l'éducation scoute.",
+            "en": "The NSO's youth programme promotes community engagement and service to others as an essential component of Scout education."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    },
+    {
+      "code": "D09",
+      "ordre": 9,
+      "nom": {
+        "fr": "Croissance",
+        "en": "Growth"
+      },
+      "criteres": [
+        {
+          "code": "901",
+          "ordre": 1,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'une stratégie de croissance définie et mise en œuvre visant à augmenter le nombre de membres (jeunes et adultes).",
+            "en": "The NSO has a defined and implemented growth strategy aimed at increasing the number of members (youth and adults)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "902",
+          "ordre": 2,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a enregistré une croissance positive de ses effectifs (ou les a maintenus) au cours des trois dernières années.",
+            "en": "The NSO has recorded positive membership growth (or maintained its membership) over the past three years."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "903",
+          "ordre": 3,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN étend activement sa présence géographique pour atteindre de nouvelles communautés, y compris les zones rurales et les populations marginalisées.",
+            "en": "The NSO actively extends its geographical reach to serve new communities, including rural areas and marginalised populations."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "904",
+          "ordre": 4,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN dispose d'un système fiable de gestion des effectifs permettant de suivre les enregistrements, renouvellements et départs des membres.",
+            "en": "The NSO has a reliable membership management system for tracking member registrations, renewals and departures."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "905",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN analyse les taux de rétention de ses membres et met en place des mesures pour réduire les départs.",
+            "en": "The NSO analyses member retention rates and implements measures to reduce dropout."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    },
+    {
+      "code": "D10",
+      "ordre": 10,
+      "nom": {
+        "fr": "Amélioration continue",
+        "en": "Continuous Improvement"
+      },
+      "criteres": [
+        {
+          "code": "1001",
+          "ordre": 1,
+          "essentiel": true,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a réalisé une auto-évaluation GSAT complète au cours des trois dernières années.",
+            "en": "The NSO has completed a full GSAT self-assessment within the past three years."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "1002",
+          "ordre": 2,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a élaboré un plan d'action suite à sa dernière évaluation GSAT et en assure le suivi.",
+            "en": "The NSO has developed an action plan following its last GSAT assessment and monitors its implementation."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "1003",
+          "ordre": 3,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN a démontré des améliorations mesurables dans les domaines identifiés comme faibles lors de la précédente évaluation.",
+            "en": "The NSO has demonstrated measurable improvements in the areas identified as weak during the previous assessment."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "1004",
+          "ordre": 4,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN utilise des mécanismes de retour d'information (feedback) de ses membres pour améliorer ses services et programmes.",
+            "en": "The NSO uses member feedback mechanisms to improve its services and programmes."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "1005",
+          "ordre": 5,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN documente et partage ses bonnes pratiques en interne et avec d'autres OSN.",
+            "en": "The NSO documents and shares its good practices internally and with other NSOs."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "1006",
+          "ordre": 6,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN participe activement aux initiatives de partage de connaissances au niveau régional et mondial (ateliers, conférences, jumelages).",
+            "en": "The NSO actively participates in knowledge-sharing initiatives at regional and global level (workshops, conferences, twinning)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "1007",
+          "ordre": 7,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN sollicite et utilise l'appui technique de l'OMMS et/ou du bureau régional pour renforcer ses capacités.",
+            "en": "The NSO seeks and uses technical support from WOSM and/or the regional office to strengthen its capacities."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "1008",
+          "ordre": 8,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN intègre une culture d'amélioration continue dans sa gestion quotidienne (revues régulières, cycles PDCA ou équivalent).",
+            "en": "The NSO embeds a culture of continuous improvement in its day-to-day management (regular reviews, PDCA cycles or equivalent)."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        },
+        {
+          "code": "1009",
+          "ordre": 9,
+          "essentiel": false,
+          "actif": true,
+          "libelle": {
+            "fr": "L'OSN évalue régulièrement l'efficacité de ses processus internes et les optimise en fonction des résultats.",
+            "en": "The NSO regularly evaluates the effectiveness of its internal processes and optimises them based on results."
+          },
+          "guideInterpretation": {
+            "fr": "",
+            "en": ""
+          }
+        }
+      ]
+    }
+  ]
+}

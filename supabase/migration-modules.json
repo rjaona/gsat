@@ -1,0 +1,337 @@
+{
+  "project": "GSAT Digital V2 — Firebase → Supabase",
+  "date": "2026-04-10",
+  "modules": [
+    {
+      "id": "infra",
+      "name": "Infrastructure Supabase",
+      "phase": 1,
+      "files_to_create": [
+        "supabase/schema.sql",
+        "supabase/hook_custom_access_token.sql",
+        "supabase/rls_policies.sql",
+        "supabase/trigger_on_score_write.sql",
+        "supabase/edge-functions/chat-with-ai/index.ts",
+        "supabase/edge-functions/manage-user/index.ts",
+        ".env.local (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)"
+      ],
+      "files_to_remove": [],
+      "dependencies": [],
+      "risk": "low"
+    },
+    {
+      "id": "types",
+      "name": "Types et client Supabase",
+      "phase": 1,
+      "files_to_create": [
+        "src/services/supabase.ts",
+        "src/types/supabase.generated.ts"
+      ],
+      "files_to_modify": [
+        "src/types/index.ts — retirer import Timestamp, remplacer par string ISO8601"
+      ],
+      "files_to_remove": [
+        "src/services/firebase.ts",
+        "src/services/emulators.ts"
+      ],
+      "dependencies": ["infra"],
+      "risk": "low"
+    },
+    {
+      "id": "auth",
+      "name": "Authentification (authService + authStore)",
+      "phase": 2,
+      "files_to_rewrite": [
+        "src/services/authService.ts"
+      ],
+      "files_to_modify": [
+        "src/stores/authStore.ts — User Firebase → Session Supabase",
+        "src/components/auth/LoginPage.tsx — supprimer ref browserSessionPersistence"
+      ],
+      "key_changes": [
+        "signInWithEmailAndPassword → supabase.auth.signInWithPassword",
+        "onAuthStateChanged → supabase.auth.onAuthStateChange",
+        "user.getIdToken(true) → supabase.auth.refreshSession()",
+        "getTokenClaims → lire session.user.app_metadata (injecté par hook)",
+        "getUserProfile(uid) → supabase.from('users').select().eq('id', uid).single()"
+      ],
+      "dependencies": ["types"],
+      "risk": "high",
+      "note": "Blocker pour tout le reste — à faire en premier parmi les services"
+    },
+    {
+      "id": "audit",
+      "name": "auditService",
+      "phase": 2,
+      "files_to_rewrite": [
+        "src/services/auditService.ts"
+      ],
+      "key_changes": [
+        "addDoc(collection(db, 'auditLog'), ...) → supabase.from('audit_log').insert(...)",
+        "DocumentSnapshot cursor → range-based pagination avec created_at < cursor_value",
+        "Timestamp → ISO string"
+      ],
+      "dependencies": ["auth"],
+      "risk": "low",
+      "note": "Utilisé par presque tous les services — migrer avant les autres"
+    },
+    {
+      "id": "notifications",
+      "name": "notificationService + notificationStore",
+      "phase": 2,
+      "files_to_rewrite": [
+        "src/services/notificationService.ts"
+      ],
+      "files_to_modify": [
+        "src/stores/notificationStore.ts"
+      ],
+      "key_changes": [
+        "onSnapshot → supabase.channel('notifications').on('postgres_changes', ...).subscribe()",
+        "writeBatch → supabase.from('notifications').update({read:true}).eq('recipient_id', uid).eq('read', false)",
+        "addDoc → supabase.from('notifications').insert(...)"
+      ],
+      "dependencies": ["auth"],
+      "risk": "medium",
+      "note": "Supabase Realtime remplace onSnapshot. Vérifier que le channel est unsubscribed au logout."
+    },
+    {
+      "id": "organisations",
+      "name": "organisationService",
+      "phase": 3,
+      "files_to_rewrite": [
+        "src/services/organisationService.ts"
+      ],
+      "key_changes": [
+        "getDocs(query(col, where, orderBy)) → supabase.from('organisations').select().eq(...).order(...)",
+        "onSnapshot → supabase Realtime channel postgres_changes",
+        "addDoc → insert + select id",
+        "Vérifications d'intégrité (enfants, évaluations) → requêtes count Supabase"
+      ],
+      "dependencies": ["auth", "audit"],
+      "risk": "low"
+    },
+    {
+      "id": "admin-users",
+      "name": "adminService (createUser, updateUserRole, deleteUser)",
+      "phase": 3,
+      "files_to_rewrite": [
+        "src/services/adminService.ts"
+      ],
+      "key_changes": [
+        "httpsCallable(functions, 'createUser') → supabase.functions.invoke('manage-user', {body: {action:'create',...}})",
+        "httpsCallable(functions, 'updateUserClaims') → supabase.functions.invoke('manage-user', {body: {action:'update_claims',...}})",
+        "httpsCallable(functions, 'deleteUser') → supabase.functions.invoke('manage-user', {body: {action:'delete',...}})",
+        "auth.currentUser.getIdToken(true) → supabase.auth.refreshSession()"
+      ],
+      "dependencies": ["auth", "audit"],
+      "risk": "medium"
+    },
+    {
+      "id": "referentiel",
+      "name": "referentielService",
+      "phase": 3,
+      "files_to_rewrite": [
+        "src/services/referentielService.ts"
+      ],
+      "key_changes": [
+        "getDoc(doc(db, 'referentiel', version)) → requête JOIN referentiel_versions + dimensions + criteres",
+        "Reconstruire l'objet Referentiel normalisé depuis les 3 tables",
+        "onSnapshot → Realtime channel",
+        "setDoc (merge) → upsert avec referentiel_history INSERT"
+      ],
+      "dependencies": ["auth"],
+      "risk": "medium",
+      "note": "Le référentiel est principalement lu depuis le JSON local (src/data/referentiel_v3_0.json) — la DB est la source d'autorité pour les mises à jour admin uniquement."
+    },
+    {
+      "id": "campagnes",
+      "name": "campagneService",
+      "phase": 3,
+      "files_to_rewrite": [
+        "src/services/campagneService.ts"
+      ],
+      "key_changes": [
+        "addDoc → insert().select('id').single()",
+        "updateDoc → update().eq('id', id)",
+        "deleteDoc → delete().eq('id', id)",
+        "onSnapshot → Realtime channel",
+        "Timestamp.toDate() → new Date(isoString)",
+        "campagne.dateOuverture instanceof Timestamp → typeof string check"
+      ],
+      "dependencies": ["auth", "audit", "notifications"],
+      "risk": "medium"
+    },
+    {
+      "id": "evaluations",
+      "name": "evaluationService",
+      "phase": 4,
+      "files_to_rewrite": [
+        "src/services/evaluationService.ts"
+      ],
+      "key_changes": [
+        "runTransaction (lock doublon) → INSERT INTO evaluations avec UNIQUE(org_id, campagne_id) + ON CONFLICT DO NOTHING, vérifier rowsAffected",
+        "runTransaction (updateStatut) → RPC PostgreSQL fn_update_eval_statut(eval_id, new_statut) qui vérifie la transition atomiquement",
+        "setDoc(scoreRef) → supabase.from('evaluation_scores').upsert({eval_id, critere_code, note, ...})",
+        "getScores → select from evaluation_scores where eval_id",
+        "onSnapshot → Realtime channel sur evaluations + evaluation_scores",
+        "uploadPreuve → storageService Supabase + insert evaluation_preuves"
+      ],
+      "dependencies": ["campagnes", "notifications", "storage"],
+      "risk": "high",
+      "note": "C'est le service le plus critique. Le trigger on_score_write gère le recalcul — ne pas recalculer côté client."
+    },
+    {
+      "id": "storage",
+      "name": "storageService",
+      "phase": 4,
+      "files_to_rewrite": [
+        "src/services/storageService.ts"
+      ],
+      "key_changes": [
+        "ref(storage, path) → supabase.storage.from('preuves')",
+        "uploadBytesResumable → upload avec tus-js-client ou supabase.storage.from().upload() pour fichiers < 5MB",
+        "getDownloadURL → supabase.storage.from('preuves').getPublicUrl(path) ou createSignedUrl pour accès privé",
+        "deleteObject → supabase.storage.from('preuves').remove([path])"
+      ],
+      "dependencies": ["auth"],
+      "risk": "medium",
+      "note": "Configurer le bucket 'preuves' en mode privé dans Supabase Storage. RLS bucket policy : accès restreint à l'org de l'évaluation."
+    },
+    {
+      "id": "dashboard",
+      "name": "dashboardService",
+      "phase": 4,
+      "files_to_rewrite": [
+        "src/services/dashboardService.ts"
+      ],
+      "key_changes": [
+        "getDoc(doc(db, 'dashboardStats', orgId)) → supabase.from('dashboard_stats').select().eq('org_id', orgId).single()",
+        "onSnapshot → Realtime channel sur dashboard_stats",
+        "getEvaluationsRecentes → supabase.from('evaluations').select().eq('org_id', orgId).order('updated_at', {ascending: false}).limit(n)"
+      ],
+      "dependencies": ["evaluations"],
+      "risk": "low"
+    },
+    {
+      "id": "plans-action",
+      "name": "planActionService",
+      "phase": 5,
+      "files_to_rewrite": [
+        "src/services/planActionService.ts"
+      ],
+      "key_changes": [
+        "COL_PLANS subcollection → tables relationnelles plans_action, plan_actions, action_suivis",
+        "getDocs(collection(db, COL_PLANS, planId, COL_ACTIONS)) → select from plan_actions where plan_id",
+        "addDoc → insert",
+        "onSnapshot plan + actions → Realtime channel sur plan_actions where plan_id",
+        "createPlanFromEvaluation : scores KO → select from evaluation_scores where eval_id and note = 0"
+      ],
+      "dependencies": ["evaluations", "notifications"],
+      "risk": "medium"
+    },
+    {
+      "id": "ai",
+      "name": "aiService",
+      "phase": 5,
+      "files_to_rewrite": [
+        "src/services/aiService.ts"
+      ],
+      "key_changes": [
+        "httpsCallable(functions, 'chatWithAi') → supabase.functions.invoke('chat-with-ai', {body: ...})",
+        "Même fallback mock si la Edge Function retourne {mock: true}"
+      ],
+      "dependencies": ["auth"],
+      "risk": "low"
+    },
+    {
+      "id": "helpers",
+      "name": "firestoreHelpers → supabaseHelpers",
+      "phase": 5,
+      "files_to_rewrite": [
+        "src/services/firestoreHelpers.ts → src/services/supabaseHelpers.ts"
+      ],
+      "key_changes": [
+        "Timestamp ↔ Date → ISO string ↔ Date (pas besoin de conversion custom)",
+        "getDocument → wrap supabase.from().select().eq().single()",
+        "queryCollection → wrap supabase.from().select().match(filters)",
+        "Pagination cursor → timestamp-based (created_at < lastValue)"
+      ],
+      "dependencies": ["types"],
+      "risk": "low"
+    },
+    {
+      "id": "stores",
+      "name": "Stores Zustand",
+      "phase": 6,
+      "files_to_modify": [
+        "src/stores/authStore.ts",
+        "src/stores/campagneStore.ts",
+        "src/stores/evaluationStore.ts",
+        "src/stores/notificationStore.ts",
+        "src/stores/planActionStore.ts",
+        "src/stores/dashboardStore.ts",
+        "src/stores/dashboardOsnStore.ts",
+        "src/stores/dashboardGlobalStore.ts",
+        "src/stores/referentielStore.ts",
+        "src/stores/aiChatStore.ts"
+      ],
+      "key_changes": [
+        "Type User Firebase → type Session Supabase",
+        "Unsubscribe callbacks : () => void Firebase → channel.unsubscribe() Supabase",
+        "Timestamps → ISO strings dans les états Zustand"
+      ],
+      "dependencies": ["auth", "notifications", "evaluations", "campagnes"],
+      "risk": "medium"
+    },
+    {
+      "id": "tests",
+      "name": "Tests — remplacer les mocks Firebase",
+      "phase": 7,
+      "files_to_rewrite": [
+        "src/__tests__/evaluationService.test.ts",
+        "src/__tests__/campagneService.test.ts",
+        "src/__tests__/firestoreHelpers.test.ts",
+        "src/__tests__/security/firestoreRules.test.ts → supabaseRLS.test.ts"
+      ],
+      "files_to_modify": [
+        "src/vitest.setup.ts — retirer Firebase emulator setup"
+      ],
+      "key_changes": [
+        "vi.mock('./firebase') → vi.mock('./supabase')",
+        "Firestore emulator → Supabase local (supabase start)",
+        "firestoreRules.test.ts → tests RLS via supabase-js avec différents tokens JWT"
+      ],
+      "dependencies": ["auth", "evaluations", "campagnes"],
+      "risk": "medium"
+    },
+    {
+      "id": "cleanup",
+      "name": "Nettoyage final",
+      "phase": 7,
+      "files_to_remove": [
+        "src/services/firebase.ts",
+        "src/services/emulators.ts",
+        "src/services/firestoreHelpers.ts"
+      ],
+      "package_changes": [
+        "npm uninstall firebase",
+        "npm install @supabase/supabase-js"
+      ],
+      "env_changes": [
+        "Retirer VITE_FIREBASE_* de .env.local",
+        "Ajouter VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY"
+      ],
+      "dependencies": ["tests"],
+      "risk": "low"
+    }
+  ],
+  "phases_summary": {
+    "1": "Infrastructure DB + client TS (sans toucher aux services existants)",
+    "2": "Auth + Audit + Notifications (couche transversale partagée par tout)",
+    "3": "Organisations + Admin Users + Référentiel + Campagnes (données maîtres)",
+    "4": "Evaluations + Storage + Dashboard (cœur métier)",
+    "5": "Plans d'action + AI + Helpers (fonctionnalités secondaires)",
+    "6": "Stores Zustand (adaptations consommateurs des services)",
+    "7": "Tests + Nettoyage + Suppression Firebase"
+  }
+}
