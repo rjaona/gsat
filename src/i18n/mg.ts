@@ -42,6 +42,7 @@ export const mg: DeepPartial<typeof fr> = {
       perimetre: 'Faritany voakasika',
       perimetreTout: 'Rehetra',
       perimetreRien: 'Tsy misy',
+      referentielInactif: 'volavola',
     },
   },
   evaluation: {

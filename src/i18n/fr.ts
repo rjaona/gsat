@@ -299,6 +299,7 @@ export const fr = {
       datesFermetureApresOuverture: "La date de fermeture doit être postérieure à l'ouverture",
       referentiel: 'Version du référentiel',
       referentielChargement: 'Chargement des référentiels…',
+      referentielInactif: 'brouillon',
       mode: "Mode d'évaluation",
       modeSocle: 'Socle',
       modeComplet: 'Complet',

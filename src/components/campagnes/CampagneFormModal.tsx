@@ -99,8 +99,10 @@ export default function CampagneFormModal({ campagne, onClose }: CampagneFormMod
       .then(refs => {
         if (!alive) return;
         setReferentiels(refs);
-        // Défaut : version de la campagne éditée, sinon 1er référentiel — jamais 'v3_0' en dur.
-        setReferentielVersion(prev => prev || campagne?.referentielVersion || refs[0]?.version || '');
+        // Défaut : version de la campagne éditée, sinon 1er référentiel ACTIF (jamais
+        // un brouillon inactif ni 'v3_0' en dur ; l'ordre alphabétique ne fait pas le défaut).
+        const defaut = campagne?.referentielVersion || refs.find(r => r.actif)?.version || refs[0]?.version || '';
+        setReferentielVersion(prev => prev || defaut);
         setRefsLoading(false);
       })
       .catch(() => { if (alive) setRefsLoading(false); });
@@ -320,7 +322,9 @@ export default function CampagneFormModal({ campagne, onClose }: CampagneFormMod
             >
               {refsLoading && <option value="">{t('campagne.form.referentielChargement')}</option>}
               {referentiels.map(r => (
-                <option key={r.version} value={r.version}>{r.nom}</option>
+                <option key={r.version} value={r.version}>
+                  {r.nom}{r.actif ? '' : ` — ${t('campagne.form.referentielInactif')}`}
+                </option>
               ))}
             </select>
           </div>

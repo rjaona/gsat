@@ -296,6 +296,7 @@ export const en = {
       datesFermetureApresOuverture: 'Closing date must be after opening date',
       referentiel: 'Framework version',
       referentielChargement: 'Loading frameworks…',
+      referentielInactif: 'draft',
       mode: 'Assessment mode',
       modeSocle: 'Baseline',
       modeComplet: 'Full',
