@@ -20,6 +20,7 @@ function rowToOrg(row: Record<string, unknown>): Organisation {
     type:  row['type']  as OrgType,
     nom:   row['nom']   as string,
     actif: row['actif'] as boolean,
+    poids: (row['poids'] as number | null) ?? 1,
     ...(code       != null ? { code }       : {}),
     ...(parentId   != null ? { parentId }   : {}),
     ...(paysId     != null ? { paysId }     : {}),
@@ -37,6 +38,7 @@ function payloadToRow(p: OrganisationPayload): Record<string, unknown> {
     pays_id:     p.paysId     ?? null,
     region_code: p.regionCode ?? null,
     actif:       p.actif,
+    poids:       p.poids ?? 1,
     lat:         p.coordonnees?.lat ?? null,
     lng:         p.coordonnees?.lng ?? null,
   };

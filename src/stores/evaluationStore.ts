@@ -12,8 +12,17 @@ import {
   type UpdateStatutOptions,
   type CreateEvaluationOptions,
 } from '@/services/evaluationService';
+import type { ValeurScore } from '@/components/evaluation/ScorePicker';
 
 // ── Types internes ────────────────────────────────────────────────────────────
+
+/**
+ * Charge utile d'écriture d'un score, avant timestamp/auteur. `note` peut valoir
+ * undefined — « pas répondu », qui supprime la ligne côté DB (voir writeScore),
+ * distinct de null (« non applicable »). Type partagé par toute la chaîne de
+ * saisie (CritereItem → DimensionSection → EvaluationForm → enregistrerScore).
+ */
+export type ScoreInput = Omit<Score, 'updatedBy' | 'updatedAt' | 'note'> & { note: ValeurScore };
 
 /**
  * Critère KO : essentiel avec note 0 et sans commentaire justificatif.
@@ -48,7 +57,7 @@ interface EvaluationState {
   create: (payload: EvaluationPayload, createdBy: string, options?: CreateEvaluationOptions) => Promise<string>;
   load: (evalId: string) => Promise<void>;
   updateStatut: (statut: EvaluationStatut, options?: UpdateStatutOptions) => Promise<void>;
-  saveScore: (score: Score, updatedBy: string) => Promise<void>;
+  saveScore: (score: ScoreInput, updatedBy: string) => Promise<void>;
   clearEvaluation: () => void;
 
   // ── Selectors ─────────────────────────────────────────────────────────────
@@ -169,7 +178,7 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
     }
   },
 
-  saveScore: async (score: Score, updatedBy: string) => {
+  saveScore: async (score: ScoreInput, updatedBy: string) => {
     const { evaluation } = get();
     if (!evaluation) throw new Error('Aucune évaluation chargée');
 
@@ -179,7 +188,19 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
     try {
       await writeScore(evaluation.id, score, updatedBy);
       set(state => {
-        const newScores = { ...state.scores, [score.critereCode]: score };
+        const newScores = { ...state.scores };
+        // Miroir de writeScore : note undefined sans commentaire = ligne supprimée.
+        if (score.note === undefined && !score.commentaire) {
+          delete newScores[score.critereCode];
+        } else {
+          newScores[score.critereCode] = {
+            critereCode: score.critereCode,
+            note: score.note ?? null,
+            ...(score.commentaire !== undefined ? { commentaire: score.commentaire } : {}),
+            updatedBy,
+            updatedAt: new Date().toISOString(),
+          };
+        }
         return {
           scores: newScores,
           nbCriteresRenseignes: countRenseignes(newScores),

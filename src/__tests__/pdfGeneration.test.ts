@@ -28,6 +28,9 @@ function makeCritere(code: string, essentiel = false) {
     essentiel,
     actif: true,
     ordre: parseInt(code.slice(-2), 10),
+    socle: true,
+    sourceCodes: [],
+    indicateurErp: [],
   };
 }
 
@@ -72,6 +75,7 @@ function makeEvaluation(overrides: Partial<Evaluation> = {}): Evaluation {
     createdBy: 'user-1',
     createdAt: '2025-01-01T00:00:00.000Z',
     updatedAt: '2025-06-01T00:00:00.000Z',
+    clotureeAuto: false,
     ...overrides,
   };
 }

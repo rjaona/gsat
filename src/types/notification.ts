@@ -9,6 +9,7 @@ export type NotificationType =
   | 'workflow_approved'
   | 'workflow_renvoye'
   | 'action_overdue'
+  | 'alerte_critique'   // auto-validation Faritany avec essentiels non conformes → alerte au national
   | 'user_created'
   | 'comment_added'
   | 'system';

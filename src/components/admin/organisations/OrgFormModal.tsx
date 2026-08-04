@@ -111,6 +111,7 @@ export function OrgFormModal({ org, onClose, onSuccess }: OrgFormModalProps) {
       nom,
       type,
       actif,
+      poids: 1,   // pondération de consolidation ; sélecteur dédié = tâche ultérieure
       ...(code ? { code } : {}),
       ...(parentOrgId ? { parentId: parentOrgId } : {}),
       ...(regionCode ? { regionCode: regionCode as RegionCode } : {}),

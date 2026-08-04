@@ -5,6 +5,7 @@ import { colors } from '@/design/tokens'
 import { useAuthStore } from '@/stores/authStore'
 import { useEvaluationStore } from '@/stores/evaluationStore'
 import { getScores, getPreuves } from '@/services/evaluationService'
+import { getCampagne } from '@/services/campagneService'
 import { getReferentiel, getCriteresEssentiels, calculerScoreDimension, calculerScoreGlobal } from '@/services/referentielService'
 import { writeAuditEntry } from '@/services/auditService'
 import { WorkflowStatusStepper } from '@/components/evaluation/WorkflowStatusStepper'
@@ -43,8 +44,11 @@ export function ValidationPage() {
       setError(null)
       try {
         await load(evalId!)
+        // La version du référentiel vient de la campagne de l'évaluation, jamais d'un défaut.
+        const evaln = useEvaluationStore.getState().evaluation
+        const version = evaln ? (await getCampagne(evaln.campagneId))?.referentielVersion : undefined
         const [ref, scoresData, preuvesData] = await Promise.all([
-          getReferentiel(),
+          version ? getReferentiel(version) : Promise.resolve(null),
           getScores(evalId!),
           getPreuves(evalId!),
         ])
@@ -72,7 +76,8 @@ export function ValidationPage() {
 
   const scoresParDimension = useMemo(() => {
     if (!referentiel) return {}
-    const result: Record<string, number> = {}
+    // null = dimension non comptable (vide ou entièrement N/A) ; les leaves affichent 0/« — ».
+    const result: Record<string, number | null> = {}
     for (const dim of referentiel.dimensions) {
       result[dim.code] = calculerScoreDimension(scoresMap, dim)
     }

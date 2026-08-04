@@ -113,6 +113,7 @@ export default function CampagneFormModal({ campagne, onClose }: CampagneFormMod
           dateFermeture: inputDateToIso(dateFermeture),
           referentielVersion,
           statut: 'planifiee' as CampagneStatut,
+          mode: 'complet',   // sélecteur socle/complet = tâche P2
           perimetre: [],
         });
       }

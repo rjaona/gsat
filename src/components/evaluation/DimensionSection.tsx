@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CritereItem } from './CritereItem';
 import type { DimensionDef, Score } from '@/types';
-import type { CritereKO } from '@/stores/evaluationStore';
-
-type ScoreInput = Omit<Score, 'updatedBy' | 'updatedAt'>;
+import type { CritereKO, ScoreInput } from '@/stores/evaluationStore';
 
 interface DimensionSectionProps {
   dimension: DimensionDef;

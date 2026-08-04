@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Campagne, CampagneStatut } from '@/types';
+import type { Campagne, CampagneStatut, CampagneMode } from '@/types';
 import type { Database } from '@/types/supabase.generated';
 import { createNotification } from './notificationService';
 import { writeAuditEntry } from './auditService';
@@ -32,6 +32,7 @@ function rowToCampagne(row: Record<string, unknown>): Campagne {
     dateOuverture:       row['date_ouverture']      as string,
     dateFermeture:       row['date_fermeture']      as string,
     statut:              row['statut']              as CampagneStatut,
+    mode:                (row['mode'] as CampagneMode | null) ?? 'complet',
     perimetre:           (row['perimetre'] ?? [])   as string[],
     createdBy:           row['created_by']          as string,
     createdAt:           row['created_at']          as string,

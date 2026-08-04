@@ -44,17 +44,20 @@ export function DashboardAsnPage() {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { orgId } = useAuthStore()
-  const { referentiel, subscribe: subscribeRef } = useReferentielStore()
+  const subscribeRef = useReferentielStore(s => s.subscribe)
+  const referentiel = useReferentielStore(s => s.referentiel())
 
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [evaluations, setEvaluations] = useState<Evaluation[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Subscribe to referentiel
+  // Subscribe to referentiel — version issue des stats consolidées, jamais un défaut.
   useEffect(() => {
-    const unsub = subscribeRef()
+    const version = stats?.referentielVersion
+    if (!version) return
+    const unsub = subscribeRef(version)
     return unsub
-  }, [subscribeRef])
+  }, [subscribeRef, stats?.referentielVersion])
 
   // Subscribe to dashboard stats
   useEffect(() => {

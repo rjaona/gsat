@@ -60,24 +60,25 @@ export function ValidationReportPage() {
       setLoading(true)
       setError(null)
       try {
-        const [evalData, ref, scoresData] = await Promise.all([
-          getEvaluation(evalId!),
-          getReferentiel(),
-          getScores(evalId!),
-        ])
+        const evalData = await getEvaluation(evalId!)
         if (!evalData) {
           setError(t('evaluationList.introuvable'))
           return
         }
-        setEvaluation(evalData)
-        setReferentiel(ref)
-        setScores(scoresData)
-
-        // Resolve org and campagne names — keep IDs as fallback on failure
+        // Résoudre org + campagne d'abord : la campagne donne la version du référentiel.
         const [org, campagne] = await Promise.allSettled([
           getOrganisation(evalData.orgId),
           getCampagne(evalData.campagneId),
         ])
+        const version = campagne.status === 'fulfilled' ? campagne.value?.referentielVersion : undefined
+        const [ref, scoresData] = await Promise.all([
+          version ? getReferentiel(version) : Promise.resolve(null),
+          getScores(evalId!),
+        ])
+        setEvaluation(evalData)
+        setReferentiel(ref)
+        setScores(scoresData)
+
         setOrgName(
           org.status === 'fulfilled' && org.value?.nom
             ? org.value.nom
@@ -109,7 +110,8 @@ export function ValidationReportPage() {
 
   const scoresParDimension = useMemo(() => {
     if (!referentiel) return {}
-    const result: Record<string, number> = {}
+    // null = dimension non comptable (vide ou entièrement N/A) ; les leaves affichent 0/« — ».
+    const result: Record<string, number | null> = {}
     for (const dim of referentiel.dimensions) {
       result[dim.code] = calculerScoreDimension(scoresMap, dim)
     }

@@ -8,7 +8,7 @@ import { useEvaluationActions, useScores, useEvaluationDetail } from '@/hooks/us
 import { useReferentielStore } from '@/stores/referentielStore';
 import { uploadPreuve, calculerScores } from '@/services/evaluationService';
 import { useAuthStore } from '@/stores/authStore';
-import type { Score } from '@/types';
+import type { ScoreInput } from '@/stores/evaluationStore';
 
 interface EvaluationFormProps {
   evalId: string;
@@ -18,7 +18,7 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const referentiel = useReferentielStore(s => s.referentiel);
+  const referentiel = useReferentielStore(s => s.referentiel());
 
   // Souscrit en temps réel à l'évaluation — indispensable pour alimenter le store
   useEvaluationDetail(evalId);
@@ -59,7 +59,7 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
   );
 
   const handleScoreChange = useCallback(
-    async (score: Omit<Score, 'updatedBy' | 'updatedAt'>) => {
+    async (score: ScoreInput) => {
       try {
         await enregistrerScore(score);
         // Si statut brouillon, passer en_cours automatiquement

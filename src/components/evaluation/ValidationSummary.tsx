@@ -6,7 +6,7 @@ import type { Referentiel, DimensionDef } from '@/types'
 
 interface ValidationSummaryProps {
   referentiel: Referentiel
-  scoresParDimension: Record<string, number>
+  scoresParDimension: Record<string, number | null>
   scoreGlobal: number
 }
 

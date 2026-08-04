@@ -19,7 +19,9 @@ function isValidReferentiel(data: unknown): data is Referentiel {
 
 export function ReferentielPage() {
   const { t } = useTranslation();
-  const { referentiel, loading, error } = useReferentiel();
+  // Vue admin : référentiel national par défaut. Un sélecteur multi-versions
+  // (via listReferentiels) reste à ajouter pour éditer aussi far_v1_0.
+  const { referentiel, loading, error } = useReferentiel('v3_0');
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState(false);

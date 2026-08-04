@@ -35,6 +35,7 @@ function rowToEvaluation(row: Record<string, unknown>): Evaluation {
     reviewerAvatar:      row['reviewer_avatar']      as string | undefined,
     reviewerRecommendation: row['reviewer_recommendation'] as string | undefined,
     reviewerVerdict:     row['reviewer_verdict']     as Evaluation['reviewerVerdict'],
+    clotureeAuto:        (row['cloturee_auto'] as boolean | undefined) ?? false,
     createdBy:           row['created_by']           as string,
     createdAt:           row['created_at']           as string,
     updatedAt:           row['updated_at']           as string,
