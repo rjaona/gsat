@@ -3,7 +3,7 @@ import { scoreSurCriteres } from '@/services/scoring';
 import type { CritereDef } from '@/types';
 
 function crit(code: string): CritereDef {
-  return { code, libelle: code, description: '', essentiel: false, actif: true, sourceCodes: [] } as CritereDef;
+  return { code, libelle: { fr: code, en: code }, essentiel: false, actif: true, ordre: 0, sourceCodes: [], socle: true, indicateurErp: [] };
 }
 
 describe('scoreSurCriteres — sémantique ID (absent ET N/A exclus)', () => {

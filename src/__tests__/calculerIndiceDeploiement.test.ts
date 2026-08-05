@@ -3,11 +3,11 @@ import { calculerIndiceDeploiement } from '@/services/indice/calculerIndiceDeplo
 import type { Referentiel, CritereDef, DimensionDef } from '@/types';
 
 function crit(code: string, sourceCodes: string[], actif = true): CritereDef {
-  return { code, libelle: code, description: '', essentiel: false, actif, sourceCodes } as CritereDef;
+  return { code, libelle: { fr: code, en: code }, essentiel: false, actif, ordre: 0, sourceCodes, socle: true, indicateurErp: [] };
 }
 function ref(criteres: CritereDef[]): Referentiel {
-  const dim = { code: 'D01', libelle: 'D01', description: '', actif: true, criteres } as DimensionDef;
-  return { version: 'far_v1_0', libelle: 'far', niveau: 'ASN', actif: true, dimensions: [dim] } as Referentiel;
+  const dim: DimensionDef = { code: 'D01', nom: { fr: 'D01', en: 'D01' }, ordre: 1, criteres };
+  return { version: 'far_v1_0', nom: { fr: 'far', en: 'far' }, niveau: 'ASN', actif: true, dimensions: [dim] };
 }
 
 // Réf : critère national 401 a 2 enfants far (F1,F2) ; 706 a 1 enfant (F3).
