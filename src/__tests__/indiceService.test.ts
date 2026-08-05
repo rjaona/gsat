@@ -89,4 +89,58 @@ describe('getIndiceDeploiement', () => {
     expect(c401?.noteNationale).toBeNull();
     expect(c401?.ecart).toBeUndefined();
   });
+
+  it('replie vers l\'éval nationale la plus récente si aucune n\'est validée', async () => {
+    // Remplace les évals nationales : nOld (en_cours, créée 2026-01-01, score 401=1) + nNew (soumise, créée 2026-09-01, score 401=3)
+    db.tables['evaluations'] = [
+      { id: 'eA_old', campagne_id: 'campF1', org_id: 'A', created_at: '2026-01-01' },
+      { id: 'eA_new', campagne_id: 'campF2', org_id: 'A', created_at: '2026-06-01' },
+      { id: 'eB',     campagne_id: 'campF1', org_id: 'B', created_at: '2026-01-01' },
+      { id: 'eC',     campagne_id: 'campF2', org_id: 'C', created_at: '2026-06-01' },
+      // National: AUCUN validée, fallback à la plus récente (nNew)
+      { id: 'nOld', campagne_id: 'campN', org_id: 'OSN', statut: 'en_cours', created_at: '2026-01-01' },
+      { id: 'nNew', campagne_id: 'campN', org_id: 'OSN', statut: 'soumise', created_at: '2026-09-01' },
+    ];
+    db.tables['evaluation_scores'] = [
+      { eval_id: 'eA_old', critere_code: 'F1', note: 0 }, { eval_id: 'eA_old', critere_code: 'F2', note: 0 },
+      { eval_id: 'eA_new', critere_code: 'F1', note: 3 }, { eval_id: 'eA_new', critere_code: 'F2', note: 3 },
+      { eval_id: 'eB',     critere_code: 'F1', note: 0 }, { eval_id: 'eB',     critere_code: 'F2', note: 0 },
+      { eval_id: 'nOld', critere_code: '401', note: 1 },
+      { eval_id: 'nNew', critere_code: '401', note: 3 },
+    ];
+    const res = await getIndiceDeploiement();
+    const c401 = res.find((r) => r.code === '401')!;
+    // ID = (100*3 + 0*1) / (3+1) = 75 (même que le premier test)
+    expect(c401.id).toBe(75);
+    // Sans validée, fallback à nNew (la plus récente par created_at), donc note 3 (pas 1 de nOld)
+    expect(c401.noteNationale).toBe(3);
+    // écart = 3*100/3 − 75 = 25
+    expect(c401.ecart).toBe(25);
+  });
+
+  it('préserve note nationale null (N/A) dans l\'écart', async () => {
+    // Remplace les évals nationales : une seule validée avec score 401=null
+    db.tables['evaluations'] = [
+      { id: 'eA_old', campagne_id: 'campF1', org_id: 'A', created_at: '2026-01-01' },
+      { id: 'eA_new', campagne_id: 'campF2', org_id: 'A', created_at: '2026-06-01' },
+      { id: 'eB',     campagne_id: 'campF1', org_id: 'B', created_at: '2026-01-01' },
+      { id: 'eC',     campagne_id: 'campF2', org_id: 'C', created_at: '2026-06-01' },
+      // National: validée avec score null pour 401
+      { id: 'nValNull', campagne_id: 'campN', org_id: 'OSN', statut: 'validee', created_at: '2026-02-01' },
+    ];
+    db.tables['evaluation_scores'] = [
+      { eval_id: 'eA_old', critere_code: 'F1', note: 0 }, { eval_id: 'eA_old', critere_code: 'F2', note: 0 },
+      { eval_id: 'eA_new', critere_code: 'F1', note: 3 }, { eval_id: 'eA_new', critere_code: 'F2', note: 3 },
+      { eval_id: 'eB',     critere_code: 'F1', note: 0 }, { eval_id: 'eB',     critere_code: 'F2', note: 0 },
+      { eval_id: 'nValNull', critere_code: '401', note: null },
+    ];
+    const res = await getIndiceDeploiement();
+    const c401 = res.find((r) => r.code === '401')!;
+    // ID = (100*3 + 0*1) / (3+1) = 75 (même que les autres tests)
+    expect(c401.id).toBe(75);
+    // Note nationale null (N/A)
+    expect(c401.noteNationale).toBeNull();
+    // écart indéfini quand note nationale est null
+    expect(c401.ecart).toBeUndefined();
+  });
 });
