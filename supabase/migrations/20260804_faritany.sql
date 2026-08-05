@@ -163,6 +163,30 @@ SELECT DISTINCT ON (org_id)
 FROM erp_snapshots
 ORDER BY org_id, periode DESC, collected_at DESC;
 
+-- security_invoker : sans cela la vue s'exécute avec les droits de son
+-- propriétaire et CONTOURNE la RLS de erp_snapshots (elle exposerait les
+-- snapshots d'un autre Faritany). La vue doit respecter erp_snap_select.
+ALTER VIEW v_erp_snapshot_courant SET (security_invoker = on);
+
+-- Moyenne nationale exposée aux ASN : la RLS de dashboard_stats interdit à une
+-- ASN de lire la ligne consolidée de son OSN (lecture montante). Cette fonction
+-- SECURITY DEFINER ne rend QUE l'agrégat non sensible (score global + par
+-- dimension) de l'OSN parente — jamais scores_asn/essentiels_ko_par_org, qui
+-- révéleraient les autres Faritany (cf. règle d'isolation Faritany A ≠ B).
+CREATE OR REPLACE FUNCTION public.fn_moyenne_nationale(p_org_id uuid)
+RETURNS TABLE (score_global numeric, score_par_dimension jsonb)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT ds.score_global, ds.score_par_dimension
+  FROM dashboard_stats ds
+  JOIN organisations self ON self.parent_id = ds.org_id
+  WHERE self.id = p_org_id
+$$;
+REVOKE ALL ON FUNCTION public.fn_moyenne_nationale(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.fn_moyenne_nationale(uuid) TO authenticated;
+
 
 -- =============================================================================
 -- PARTIE 5 — Moteur d'alertes et bibliothèque d'actions types
@@ -666,6 +690,65 @@ CREATE POLICY evals_update_resp_asn ON evaluations
     org_id = (auth.jwt() ->> 'org_id')::uuid
     AND statut IN ('brouillon', 'en_cours', 'validee')  -- validee = auto-validation autorisée
   );
+
+-- Saisie des scores par le comité Faritany : la policy de base scores_write
+-- n'inclut pas 'responsable_asn', or CLAUDE.md lui attribue « saisie + auto-
+-- validation ». Sans cette policy, le comité ne peut pas noter (RLS violation).
+-- Même garde que les autres : sa propre org, éval en brouillon/en_cours.
+CREATE POLICY scores_write_resp_asn ON evaluation_scores
+  FOR ALL TO authenticated
+  USING (
+    (auth.jwt() ->> 'role') = 'responsable_asn'
+    AND EXISTS (
+      SELECT 1 FROM evaluations e
+      WHERE e.id = evaluation_scores.eval_id
+        AND e.org_id = (auth.jwt() ->> 'org_id')::uuid
+        AND e.statut IN ('brouillon', 'en_cours')
+    )
+  )
+  WITH CHECK (
+    (auth.jwt() ->> 'role') = 'responsable_asn'
+    AND EXISTS (
+      SELECT 1 FROM evaluations e
+      WHERE e.id = evaluation_scores.eval_id
+        AND e.org_id = (auth.jwt() ->> 'org_id')::uuid
+        AND e.statut IN ('brouillon', 'en_cours')
+    )
+  );
+
+-- Revue nationale : un relecteur (OSN / région / admin) arbitre une évaluation
+-- VALIDÉE de son sous-arbre → clôturée (approuvée) ou renvoyée en_cours (révision).
+-- La policy evals_update de base a un WITH CHECK NUL (donc = USING, qui exige
+-- statut IN soumise/validee ET l'org du relecteur) et rejette ce résultat :
+-- d'où cette policy dédiée, sans laquelle revoirEvaluation échoue en RLS.
+CREATE POLICY evals_update_revue ON evaluations
+  FOR UPDATE TO authenticated
+  USING (
+    statut = 'validee'
+    AND (
+      (auth.jwt() ->> 'role') = 'admin_global'
+      OR ((auth.jwt() ->> 'role') = 'responsable_osn' AND EXISTS (
+            SELECT 1 FROM organisations o
+            WHERE o.id = evaluations.org_id
+              AND (o.id = (auth.jwt() ->> 'org_id')::uuid
+                   OR o.parent_id = (auth.jwt() ->> 'org_id')::uuid)))
+      OR ((auth.jwt() ->> 'role') = 'responsable_region' AND EXISTS (
+            SELECT 1 FROM organisations o
+            JOIN organisations p ON p.id = o.parent_id
+            WHERE o.id = evaluations.org_id
+              AND p.parent_id = (auth.jwt() ->> 'org_id')::uuid))
+    )
+  )
+  WITH CHECK (
+    statut IN ('cloturee', 'en_cours')   -- les deux issues de l'arbitrage
+  );
+
+-- system_config : la seule policy (sysconfig_admin) réserve la lecture à
+-- admin_global, or DashboardOsnPage (responsable_osn) doit lire son propre
+-- libelle_niveau_local. Lecture de SA PROPRE config (non sensible) autorisée.
+CREATE POLICY sysconfig_select_own ON system_config
+  FOR SELECT TO authenticated
+  USING (org_id = (auth.jwt() ->> 'org_id')::uuid);
 
 -- Garde-fou serveur : le PV de comité est obligatoire pour auto-valider,
 -- et l'échéance de revue est posée automatiquement.

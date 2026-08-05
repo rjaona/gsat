@@ -77,6 +77,20 @@ export async function listEvaluationsByOrg(orgId: string): Promise<Evaluation[]>
   return (data ?? []).map(r => rowToEval(r as Record<string, unknown>));
 }
 
+/**
+ * File de la revue nationale : évaluations validées en attente de revue
+ * (statut='validee' ET revue_at IS NULL). La RLS (evals_select) restreint déjà
+ * au sous-arbre de l'OSN du relecteur ; le tri par risque se fait côté page.
+ */
+export async function listEvaluationsARevoir(): Promise<Evaluation[]> {
+  const { data, error } = await supabase
+    .from('evaluations').select('*')
+    .eq('statut', 'validee')
+    .is('revue_at', null);
+  if (error) throw error;
+  return (data ?? []).map(r => rowToEval(r as Record<string, unknown>));
+}
+
 export async function getEvaluationForOrgCampagne(
   orgId: string, campagneId: string
 ): Promise<Evaluation | null> {

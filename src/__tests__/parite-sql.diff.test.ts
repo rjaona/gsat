@@ -1,9 +1,14 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { calculerScoreDimension, calculerScoreGlobal, getCriteresEssentielsKO } from '@/services/scoring';
-import ref_db from './src/ref_db.json';
+// Le référentiel far_v1_0 est déjà versionné dans le repo ; on en tire le tableau
+// de dimensions (le JSON est un objet {meta, referentiel, dimensions}).
+import raw from '../data/far_v1_0.json';
+const ref_db = raw.dimensions;
 
-const PG = ['-h','127.0.0.1','-p','5433','-U','postgres','-d','gsat','-tAc'];
+// Cible PG paramétrable (CI / instance locale) ; défauts = job dédié 5433/gsat.
+const PG = ['-h', process.env['PGHOST'] ?? '127.0.0.1', '-p', process.env['PGPORT'] ?? '5433',
+            '-U', process.env['PGUSER'] ?? 'postgres', '-d', process.env['PGDATABASE'] ?? 'gsat', '-tAc'];
 const sql = (q: string) => execFileSync('psql', [...PG, q], { encoding: 'utf8' }).trim();
 
 const ref: any = { version: 'far_v1_0', nom: { fr: '', en: '' }, actif: true, dimensions: ref_db };

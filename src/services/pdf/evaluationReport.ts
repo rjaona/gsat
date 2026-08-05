@@ -129,7 +129,7 @@ export async function generateEvaluationReport(
   }
 
   // Calculate dimension scores
-  const dimScores: Record<string, number> = {}
+  const dimScores: Record<string, number | null> = {}
   for (const dim of referentiel.dimensions) {
     dimScores[dim.code] = calculerScoreDimension(scoresMap, dim)
   }

@@ -1,8 +1,8 @@
 import { useEffect, useCallback } from 'react';
-import { useEvaluationStore } from '@/stores/evaluationStore';
+import { useEvaluationStore, type ScoreInput } from '@/stores/evaluationStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useReferentielStore } from '@/stores/referentielStore';
-import type { EvaluationStatut, Score } from '@/types';
+import type { EvaluationStatut } from '@/types';
 import type { EvaluationPayload, UpdateStatutOptions, CreateEvaluationOptions } from '@/services/evaluationService';
 import { VALIDATION_ROLES } from '@/types/roles';
 
@@ -47,18 +47,16 @@ export function useScores(evalId: string | undefined) {
     progressionPercent,
   } = useEvaluationStore();
 
-  const referentiel = useReferentielStore(s => s.referentiel);
+  const referentiel = useReferentielStore(s => s.referentiel());
+  const campagneMode = useEvaluationStore(s => s.campagneMode);
 
   useEffect(() => {
     if (!evalId || !referentiel) return;
-
-    const allCriteres = referentiel.dimensions.flatMap(d => d.criteres.filter(c => c.actif));
-    const essentiels = allCriteres.filter(c => c.essentiel).map(c => c.code);
-
-    const unsubscribe = subscribeToScores(evalId, allCriteres.length, essentiels);
+    // Le scoring (avancement, essentiels KO) suit le mode de la campagne.
+    const unsubscribe = subscribeToScores(evalId, referentiel, campagneMode);
     return unsubscribe;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [evalId, referentiel]);
+  }, [evalId, referentiel, campagneMode]);
 
   return {
     scores,
@@ -123,9 +121,9 @@ export function useEvaluationActions() {
   );
 
   const enregistrerScore = useCallback(
-    async (score: Omit<Score, 'updatedBy' | 'updatedAt'>) => {
+    async (score: ScoreInput) => {
       if (!user) throw new Error('Non authentifié');
-      return saveScore(score as Score, user.id);
+      return saveScore(score, user.id);
     },
     [saveScore, user]
   );

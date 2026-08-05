@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { DimensionSection } from './DimensionSection';
@@ -7,8 +7,11 @@ import { EvaluationWorkflowBadge } from './EvaluationWorkflowBadge';
 import { useEvaluationActions, useScores, useEvaluationDetail } from '@/hooks/useEvaluation';
 import { useReferentielStore } from '@/stores/referentielStore';
 import { uploadPreuve, calculerScores } from '@/services/evaluationService';
+import { getErpSnapshotCourant, type ErpSnapshot } from '@/services/erpService';
 import { useAuthStore } from '@/stores/authStore';
-import type { Score } from '@/types';
+import { useEvaluationStore, type ScoreInput } from '@/stores/evaluationStore';
+import { SaveStatusIndicator, type SaveStatus } from '@/components/ui';
+import { generatePrepSheet } from '@/services/pdf/prepSheet';
 
 interface EvaluationFormProps {
   evalId: string;
@@ -18,7 +21,14 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const referentiel = useReferentielStore(s => s.referentiel);
+  const referentiel = useReferentielStore(s => s.referentiel());
+  const campagneMode = useEvaluationStore(s => s.campagneMode);
+  const loadingScore = useEvaluationStore(s => s.loadingScore);
+  const storeError = useEvaluationStore(s => s.error);
+  // Indicateur réseau permanent (mesure 5) dérivé de l'état d'écriture par note.
+  const saveStatus: SaveStatus = storeError
+    ? 'error'
+    : Object.values(loadingScore).some(Boolean) ? 'saving' : 'saved';
 
   // Souscrit en temps réel à l'évaluation — indispensable pour alimenter le store
   useEvaluationDetail(evalId);
@@ -45,6 +55,16 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [erpSnapshot, setErpSnapshot] = useState<ErpSnapshot | null>(null);
+
+  // Snapshot ERP courant de l'organisation évaluée — informatif, souvent absent.
+  useEffect(() => {
+    const orgId = evaluation?.orgId;
+    if (!orgId) return;
+    let alive = true;
+    void getErpSnapshotCourant(orgId).then(s => { if (alive) setErpSnapshot(s); }).catch(() => { /* pas d'ERP */ });
+    return () => { alive = false; };
+  }, [evaluation?.orgId]);
 
   // Calcul du score global et par dimension en temps réel
   const scoreResult = useMemo(
@@ -52,14 +72,15 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
       ? calculerScores(
           scores,
           referentiel.dimensions.map(d => d.code),
-          code => referentiel.dimensions.find(d => d.code === code)?.criteres ?? []
+          code => referentiel.dimensions.find(d => d.code === code)?.criteres ?? [],
+          campagneMode
         )
       : { global: 0, parDimension: {} },
-    [scores, referentiel]
+    [scores, referentiel, campagneMode]
   );
 
   const handleScoreChange = useCallback(
-    async (score: Omit<Score, 'updatedBy' | 'updatedAt'>) => {
+    async (score: ScoreInput) => {
       try {
         await enregistrerScore(score);
         // Si statut brouillon, passer en_cours automatiquement
@@ -104,6 +125,29 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
     },
     [evaluation, user]
   );
+
+  // Mesure 3 : reprise au critère EXACT où l'utilisateur s'est arrêté (1er non répondu).
+  const resume = useMemo(() => {
+    if (!referentiel) return null;
+    for (const dim of referentiel.dimensions) {
+      const c = dim.criteres.find(cr => cr.actif && (campagneMode !== 'socle' || cr.socle !== false) && !(cr.code in scores));
+      if (c) return { dimCode: dim.code, critereCode: c.code };
+    }
+    return null;
+  }, [referentiel, scores, campagneMode]);
+  const [reprisFait, setReprisFait] = useState(false);
+  useEffect(() => {
+    if (reprisFait || !resume || Object.keys(scores).length === 0) return;
+    const el = document.getElementById(`critere-${resume.critereCode}`);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setReprisFait(true); }
+  }, [resume, scores, reprisFait]);
+
+  // Mesure 1 : fiche de préparation papier (socle si campagne socle).
+  const handleFiche = useCallback(() => {
+    if (!referentiel) return;
+    const doc = generatePrepSheet(referentiel, campagneMode, { orgName: evaluation?.orgId });
+    doc.save(`fiche-preparation-${referentiel.version}.pdf`);
+  }, [referentiel, campagneMode, evaluation?.orgId]);
 
   const handleSoumettre = async () => {
     setSubmitError(null);
@@ -169,7 +213,19 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
             {t('evaluation.campagne')} — {evaluation.campagneId}
           </p>
         </div>
-        <EvaluationWorkflowBadge statut={evaluation.statut} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <SaveStatusIndicator status={saveStatus} />
+          <button
+            type="button"
+            onClick={handleFiche}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+            style={{ background: 'var(--surface-container-highest)', color: 'var(--primary)' }}
+          >
+            <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+            {t('evaluation.ficheReparation')}
+          </button>
+          <EvaluationWorkflowBadge statut={evaluation.statut} />
+        </div>
       </div>
 
       {/* Bannière lecture seule */}
@@ -222,7 +278,9 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
             onUploadPreuve={handleUploadPreuve}
             uploadProgress={uploadProgress}
             disabled={isReadOnly || loading}
-            defaultOpen={idx === 0}
+            defaultOpen={resume ? dim.code === resume.dimCode : idx === 0}
+            mode={campagneMode}
+            erpSnapshot={erpSnapshot}
           />
         ))}
       </div>

@@ -63,6 +63,7 @@ function rowToOrg(row: Record<string, unknown>): Organisation {
     nom:  row['nom']  as string,
     type: row['type'] as Organisation['type'],
     actif: row['actif'] as boolean,
+    poids: (row['poids'] as number | null) ?? 1,
     ...(paysId    != null ? { paysId }    : {}),
     ...(regionCode != null ? { regionCode } : {}),
     ...(parentId  != null ? { parentId }  : {}),

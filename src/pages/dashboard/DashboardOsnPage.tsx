@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { useDashboardOsnStore } from '@/stores/dashboardOsnStore'
-import { listOrganisations } from '@/services/organisationService'
+import { listOrganisations, getLibelleNiveauLocal } from '@/services/organisationService'
 import { getDashboardStats } from '@/services/dashboardService'
 import { listPlanStatsByOrgIds } from '@/services/planActionService'
 import { OsnScoreHero } from '@/components/dashboard/osn/OsnScoreHero'
@@ -22,6 +22,7 @@ interface AsnRow {
   nom: string
   scoreGlobal: number
   scoreParDimension: Record<string, number>
+  code?: string | undefined
   dernierAudit?: string
 }
 
@@ -47,6 +48,14 @@ export function DashboardOsnPage() {
   const [asnOrgs, setAsnOrgs] = useState<Organisation[]>([])
   const [asnStats, setAsnStats] = useState<Record<string, DashboardStats>>({})
   const [asnLoading, setAsnLoading] = useState(true)
+  const [niveauLabel, setNiveauLabel] = useState<string>()
+
+  // Libellé du niveau local (system_config) — jamais « ASN » en dur.
+  useEffect(() => {
+    let alive = true
+    void getLibelleNiveauLocal(osnId).then(l => { if (alive && l) setNiveauLabel(l) }).catch(() => { /* défaut i18n */ })
+    return () => { alive = false }
+  }, [osnId])
 
   // ── Progression plan d'action par ASN ──
   interface AsnPlanStats { actionsTotal: number; actionsDone: number }
@@ -126,6 +135,7 @@ export function DashboardOsnPage() {
             nom: org.nom,
             scoreGlobal,
             scoreParDimension: s?.scoreParDimension ?? {},
+            code: org.code,
           }
         })
         .sort((a, b) => b.scoreGlobal - a.scoreGlobal),
@@ -255,7 +265,7 @@ export function DashboardOsnPage() {
               <p className="text-[#454651] text-sm mt-3">{t('common.loading', 'Loading...')}</p>
             </div>
           ) : (
-            <AsnComparisonTable rows={asnRows} dimensionCodes={DIMENSION_CODES.slice(0, 5)} />
+            <AsnComparisonTable rows={asnRows} dimensionCodes={DIMENSION_CODES.slice(0, 5)} niveauLabel={niveauLabel} />
           )}
 
           {/* Radar dimensions */}

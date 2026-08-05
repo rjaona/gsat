@@ -33,7 +33,32 @@ export const mg: DeepPartial<typeof fr> = {
     date: 'Daty',
     actions: 'Asa',
   },
+  pages: {
+    dashboardFaritany: {
+      title: 'Tabilaon’ny Faritany',
+      scoreGlobal: 'Isa ankapobeny',
+      alertes: 'Fampitandremana',
+      alertesCritiques: 'Fampitandremana lehibe',
+      moyenneNationale: 'Salan’isan’ny Faritany',
+      planAction: 'Drafitr’asa',
+    },
+  },
+  campagne: {
+    badgeSocle: 'Fototra',
+    form: {
+      mode: 'Karazana fanombanana',
+      modeSocle: 'Fototra',
+      modeComplet: 'Feno',
+      perimetre: 'Faritany voakasika',
+      perimetreTout: 'Rehetra',
+      perimetreRien: 'Tsy misy',
+      referentielInactif: 'volavola',
+    },
+  },
   evaluation: {
+    extension: 'Fanampiny',
+    sectionExtension: 'Fanampiny — tsy tafiditra amin’ny isa',
+    erpDonnees: 'Angona ERPTEM tamin’ny {{date}} : {{valeur}}',
     notes: {
       na: 'Tsy mihatra',
       naAide: "Tsy mihatra amin'ity vondrona ity — tsy tafiditra amin'ny isa ny fepetra.",

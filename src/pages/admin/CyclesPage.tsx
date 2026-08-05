@@ -337,7 +337,14 @@ export function CyclesPage() {
                       {/* Nom */}
                       <td className="px-6 py-5">
                         <div className="flex flex-col">
-                          <span className="font-bold text-[#171c22] text-sm">{c.nom}</span>
+                          <span className="flex items-center gap-2">
+                            <span className="font-bold text-[#171c22] text-sm">{c.nom}</span>
+                            {c.mode === 'socle' && (
+                              <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-[#dee0ff] text-[#2e3b85]">
+                                {t('campagne.badgeSocle')}
+                              </span>
+                            )}
+                          </span>
                           {c.description && (
                             <span className="text-xs text-[#454651] mt-0.5 line-clamp-1">{c.description}</span>
                           )}

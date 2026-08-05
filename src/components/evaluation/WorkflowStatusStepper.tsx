@@ -29,15 +29,22 @@ const STATUT_ORDER: Record<EvaluationStatut, number> = {
 
 interface WorkflowStatusStepperProps {
   currentStatut: EvaluationStatut
+  /** Parcours Faritany (auto-validation) : saute l'étape 'soumise'. */
+  faritany?: boolean
 }
 
-export function WorkflowStatusStepper({ currentStatut }: WorkflowStatusStepperProps) {
+export function WorkflowStatusStepper({ currentStatut, faritany = false }: WorkflowStatusStepperProps) {
   const { t } = useTranslation()
-  const currentIdx = STATUT_ORDER[currentStatut]
+  // En auto-validation Faritany, on passe de 'en_cours' directement à 'validee'.
+  const steps = faritany ? STEPS.filter(s => s.statut !== 'soumise') : STEPS
+  const currentIdx = faritany
+    ? steps.findIndex(s => s.statut === currentStatut)
+    : STATUT_ORDER[currentStatut]
 
   return (
+    <>
     <div className="flex items-center w-full gap-0">
-      {STEPS.map((step, idx) => {
+      {steps.map((step, idx) => {
         const isCompleted = idx < currentIdx
         const isCurrent = idx === currentIdx
         const isUpcoming = idx > currentIdx
@@ -86,7 +93,7 @@ export function WorkflowStatusStepper({ currentStatut }: WorkflowStatusStepperPr
             </div>
 
             {/* Connector line */}
-            {idx < STEPS.length - 1 && (
+            {idx < steps.length - 1 && (
               <div
                 className="flex-1 h-0.5 mx-2"
                 style={{
@@ -101,5 +108,13 @@ export function WorkflowStatusStepper({ currentStatut }: WorkflowStatusStepperPr
         )
       })}
     </div>
+    {/* Branche « révision demandée » (revue nationale : validée → en cours) */}
+    {faritany && (
+      <p className="text-[10px] mt-3 flex items-center gap-1.5" style={{ color: colors.onSurfaceVariant }}>
+        <span className="material-symbols-outlined text-[14px]">alt_route</span>
+        {t('evaluation.brancheRevision')}
+      </p>
+    )}
+    </>
   )
 }

@@ -21,6 +21,7 @@ function makeCampagne(overrides: Partial<Campagne> & { dateFermeture: string }):
     nom: 'Campagne de test',
     dateOuverture: '2025-01-01T00:00:00.000Z',
     statut: overrides.statut ?? 'ouverte',
+    mode: 'complet',
     perimetre: [],
     createdBy: 'user-1',
     createdAt: '2025-01-01T00:00:00.000Z',

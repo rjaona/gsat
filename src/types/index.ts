@@ -275,3 +275,21 @@ export interface AuditEntry {
   metadata?: Record<string, unknown>;
   timestamp: string;
 }
+
+// ── Alertes (module Pilotage) ───────────────────────────────────────────────────
+
+export type AlerteType = 'conformite' | 'derive_erp' | 'incoherence' | 'echeance' | 'inactivite';
+export type AlerteSeverite = 'info' | 'vigilance' | 'critique';
+export type AlerteStatut = 'ouverte' | 'prise_en_compte' | 'resolue' | 'ignoree';
+
+export interface Alerte {
+  id: string;
+  orgId: string;
+  type: AlerteType;
+  severite: AlerteSeverite;
+  titre: string;
+  detail?: string | undefined;
+  critereCode?: string | undefined;
+  statut: AlerteStatut;
+  createdAt: string;
+}

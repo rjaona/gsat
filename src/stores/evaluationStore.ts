@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Evaluation, EvaluationStatut, Score } from '@/types';
+import type { Evaluation, EvaluationStatut, Score, Referentiel } from '@/types';
 import {
   getEvaluation,
   subscribeEvaluation,
@@ -12,8 +12,24 @@ import {
   type UpdateStatutOptions,
   type CreateEvaluationOptions,
 } from '@/services/evaluationService';
+import { getCampagne } from '@/services/campagneService';
+import {
+  calculerAvancement,
+  getCriteresEssentielsKO,
+  type ScoreMap,
+  type ModeCampagne,
+} from '@/services/scoring';
+import type { ValeurScore } from '@/components/evaluation/ScorePicker';
 
 // ── Types internes ────────────────────────────────────────────────────────────
+
+/**
+ * Charge utile d'écriture d'un score, avant timestamp/auteur. `note` peut valoir
+ * undefined — « pas répondu », qui supprime la ligne côté DB (voir writeScore),
+ * distinct de null (« non applicable »). Type partagé par toute la chaîne de
+ * saisie (CritereItem → DimensionSection → EvaluationForm → enregistrerScore).
+ */
+export type ScoreInput = Omit<Score, 'updatedBy' | 'updatedAt' | 'note'> & { note: ValeurScore };
 
 /**
  * Critère KO : essentiel avec note 0 et sans commentaire justificatif.
@@ -35,6 +51,12 @@ interface EvaluationState {
   nbCriteresTotal: number;
   criteresKO: CritereKO[];
 
+  // Contexte de scoring propagé depuis la campagne
+  /** Mode de la campagne de l'évaluation courante (défaut 'complet'). */
+  campagneMode: ModeCampagne;
+  /** Référentiel courant — mémorisé pour recalculer l'avancement à chaque saveScore. */
+  referentielCourant: Referentiel | null;
+
   // État UI
   loading: boolean;
   loadingScore: Record<string, boolean>;
@@ -42,13 +64,13 @@ interface EvaluationState {
 
   // ── Abonnements ──────────────────────────────────────────────────────────
   subscribeToEvaluation: (evalId: string) => () => void;
-  subscribeToScores: (evalId: string, nbTotal: number, essentiels: string[]) => () => void;
+  subscribeToScores: (evalId: string, referentiel: Referentiel, mode: ModeCampagne) => () => void;
 
   // ── Actions ───────────────────────────────────────────────────────────────
   create: (payload: EvaluationPayload, createdBy: string, options?: CreateEvaluationOptions) => Promise<string>;
   load: (evalId: string) => Promise<void>;
   updateStatut: (statut: EvaluationStatut, options?: UpdateStatutOptions) => Promise<void>;
-  saveScore: (score: Score, updatedBy: string) => Promise<void>;
+  saveScore: (score: ScoreInput, updatedBy: string) => Promise<void>;
   clearEvaluation: () => void;
 
   // ── Selectors ─────────────────────────────────────────────────────────────
@@ -59,20 +81,21 @@ interface EvaluationState {
 
 // ── Helpers internes ──────────────────────────────────────────────────────────
 
-function computeKO(scores: Record<string, Score>, essentiels: string[]): CritereKO[] {
-  return essentiels
-    .filter(code => {
-      const s = scores[code];
-      return s?.note === 0;
-    })
-    .map(code => ({
-      critereCode: code,
-      commentaireManquant: !scores[code]?.commentaire?.trim(),
-    }));
+function scoresToMap(scores: Record<string, Score>): ScoreMap {
+  const map: ScoreMap = {};
+  for (const [code, s] of Object.entries(scores)) map[code] = s.note;
+  return map;
 }
 
-function countRenseignes(scores: Record<string, Score>): number {
-  return Object.values(scores).filter(s => s.note !== null && s.note !== undefined).length;
+/**
+ * Essentiels non conformes (mode-aware via scoring.ts) + info « commentaire
+ * manquant » nécessaire à la garde de soumission.
+ */
+function computeKO(scores: Record<string, Score>, referentiel: Referentiel, mode: ModeCampagne): CritereKO[] {
+  return getCriteresEssentielsKO(scoresToMap(scores), referentiel, mode).map(code => ({
+    critereCode: code,
+    commentaireManquant: !scores[code]?.commentaire?.trim(),
+  }));
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -83,6 +106,8 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
   nbCriteresRenseignes: 0,
   nbCriteresTotal: 0,
   criteresKO: [],
+  campagneMode: 'complet',
+  referentielCourant: null,
   loading: false,
   loadingScore: {},
   error: null,
@@ -90,6 +115,16 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
   subscribeToEvaluation: (evalId: string) => {
     set({ loading: true, error: null });
     let retried = false;
+    let modeFetchedFor: string | null = null;
+    // Le mode de scoring vient de la campagne de l'évaluation (une seule lecture).
+    const applyMode = (ev: Evaluation | null) => {
+      if (ev && ev.campagneId !== modeFetchedFor) {
+        modeFetchedFor = ev.campagneId;
+        void getCampagne(ev.campagneId)
+          .then(c => { if (c) set({ campagneMode: c.mode }); })
+          .catch(() => { /* défaut 'complet' conservé */ });
+      }
+    };
     const unsubscribe = subscribeEvaluation(
       evalId,
       evaluation => {
@@ -97,18 +132,20 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
           // First null snapshot may be a timing issue — retry once via getDoc
           retried = true;
           getEvaluation(evalId)
-            .then(ev => set({ evaluation: ev, loading: false }))
+            .then(ev => { set({ evaluation: ev, loading: false }); applyMode(ev); })
             .catch(() => set({ evaluation: null, loading: false }));
           return;
         }
         set({ evaluation, loading: false });
+        applyMode(evaluation);
       },
       err => set({ error: err.message, loading: false })
     );
     return unsubscribe;
   },
 
-  subscribeToScores: (evalId: string, nbTotal: number, essentiels: string[]) => {
+  subscribeToScores: (evalId: string, referentiel: Referentiel, mode: ModeCampagne) => {
+    set({ referentielCourant: referentiel });
     const unsubscribe = subscribeEvaluationScores(
       evalId,
       scores => {
@@ -116,11 +153,13 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
         for (const s of scores) {
           map[s.critereCode] = s;
         }
+        // Avancement mode-aware : un N/A (note null) compte comme répondu.
+        const av = calculerAvancement(scoresToMap(map), referentiel, mode);
         set({
           scores: map,
-          nbCriteresTotal: nbTotal,
-          nbCriteresRenseignes: countRenseignes(map),
-          criteresKO: computeKO(map, essentiels),
+          nbCriteresTotal: av.total,
+          nbCriteresRenseignes: av.repondus,
+          criteresKO: computeKO(map, referentiel, mode),
         });
       },
       err => set({ error: err.message })
@@ -169,7 +208,7 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
     }
   },
 
-  saveScore: async (score: Score, updatedBy: string) => {
+  saveScore: async (score: ScoreInput, updatedBy: string) => {
     const { evaluation } = get();
     if (!evaluation) throw new Error('Aucune évaluation chargée');
 
@@ -179,10 +218,27 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
     try {
       await writeScore(evaluation.id, score, updatedBy);
       set(state => {
-        const newScores = { ...state.scores, [score.critereCode]: score };
+        const newScores = { ...state.scores };
+        // Miroir de writeScore : note undefined sans commentaire = ligne supprimée.
+        if (score.note === undefined && !score.commentaire) {
+          delete newScores[score.critereCode];
+        } else {
+          newScores[score.critereCode] = {
+            critereCode: score.critereCode,
+            note: score.note ?? null,
+            ...(score.commentaire !== undefined ? { commentaire: score.commentaire } : {}),
+            updatedBy,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        const ref = state.referentielCourant;
         return {
           scores: newScores,
-          nbCriteresRenseignes: countRenseignes(newScores),
+          // Recalcul optimiste mode-aware (N/A compte) ; la souscription confirmera.
+          nbCriteresRenseignes: ref
+            ? calculerAvancement(scoresToMap(newScores), ref, state.campagneMode).repondus
+            : state.nbCriteresRenseignes,
+          criteresKO: ref ? computeKO(newScores, ref, state.campagneMode) : state.criteresKO,
           loadingScore: { ...state.loadingScore, [score.critereCode]: false },
         };
       });
@@ -202,6 +258,8 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
       nbCriteresRenseignes: 0,
       nbCriteresTotal: 0,
       criteresKO: [],
+      campagneMode: 'complet',
+      referentielCourant: null,
       loading: false,
       loadingScore: {},
       error: null,

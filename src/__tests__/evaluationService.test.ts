@@ -29,6 +29,17 @@ describe('canTransitionTo — transitions valides', () => {
   it('autorise validee → cloturee', () => {
     expect(canTransitionTo('validee', 'cloturee')).toBe(true);
   });
+
+  // Arbitrage du 4 août 2026 (voir evaluationWorkflow.ts) : deux transitions
+  // autrefois interdites sont désormais valides.
+  it('autorise en_cours → validee (auto-validation Faritany, sans étape soumise)', () => {
+    // Le responsable_asn auto-valide SA PROPRE évaluation sans passer par 'soumise'.
+    expect(canTransitionTo('en_cours', 'validee')).toBe(true);
+  });
+
+  it('autorise validee → en_cours (renvoi en révision par la revue nationale)', () => {
+    expect(canTransitionTo('validee', 'en_cours')).toBe(true);
+  });
 });
 
 describe('canTransitionTo — transitions invalides', () => {
@@ -42,10 +53,6 @@ describe('canTransitionTo — transitions invalides', () => {
 
   it('refuse brouillon → cloturee', () => {
     expect(canTransitionTo('brouillon', 'cloturee')).toBe(false);
-  });
-
-  it('refuse en_cours → validee (saute l\'étape soumise)', () => {
-    expect(canTransitionTo('en_cours', 'validee')).toBe(false);
   });
 
   it('refuse en_cours → cloturee', () => {
@@ -66,10 +73,6 @@ describe('canTransitionTo — transitions invalides', () => {
 
   it('refuse validee → brouillon', () => {
     expect(canTransitionTo('validee', 'brouillon')).toBe(false);
-  });
-
-  it('refuse validee → en_cours', () => {
-    expect(canTransitionTo('validee', 'en_cours')).toBe(false);
   });
 
   it('refuse validee → soumise', () => {

@@ -20,6 +20,7 @@ function rowToOrg(row: Record<string, unknown>): Organisation {
     type:  row['type']  as OrgType,
     nom:   row['nom']   as string,
     actif: row['actif'] as boolean,
+    poids: (row['poids'] as number | null) ?? 1,
     ...(code       != null ? { code }       : {}),
     ...(parentId   != null ? { parentId }   : {}),
     ...(paysId     != null ? { paysId }     : {}),
@@ -37,6 +38,7 @@ function payloadToRow(p: OrganisationPayload): Record<string, unknown> {
     pays_id:     p.paysId     ?? null,
     region_code: p.regionCode ?? null,
     actif:       p.actif,
+    poids:       p.poids ?? 1,
     lat:         p.coordonnees?.lat ?? null,
     lng:         p.coordonnees?.lng ?? null,
   };
@@ -52,6 +54,17 @@ export async function getOrganisation(id: string): Promise<Organisation | null> 
     .single();
   if (error || !data) return null;
   return rowToOrg(data as Record<string, unknown>);
+}
+
+/** Libellé du niveau local d'une OSN (system_config.libelle_niveau_local, ex. 'Faritany'). */
+export async function getLibelleNiveauLocal(orgId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('system_config')
+    .select('libelle_niveau_local')
+    .eq('org_id', orgId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return (data as { libelle_niveau_local?: string | null }).libelle_niveau_local ?? null;
 }
 
 export async function listOrganisations(type?: OrgType, parentId?: string): Promise<Organisation[]> {

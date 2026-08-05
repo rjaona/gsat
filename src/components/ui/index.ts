@@ -1,4 +1,5 @@
 export { Button }    from './Button';
+export { SaveStatusIndicator, type SaveStatus } from './SaveStatusIndicator';
 export { Card }      from './Card';
 export { Input }     from './Input';
 export { Modal }     from './Modal';

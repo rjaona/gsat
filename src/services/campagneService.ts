@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Campagne, CampagneStatut } from '@/types';
+import type { Campagne, CampagneStatut, CampagneMode } from '@/types';
 import type { Database } from '@/types/supabase.generated';
 import { createNotification } from './notificationService';
 import { writeAuditEntry } from './auditService';
@@ -32,6 +32,7 @@ function rowToCampagne(row: Record<string, unknown>): Campagne {
     dateOuverture:       row['date_ouverture']      as string,
     dateFermeture:       row['date_fermeture']      as string,
     statut:              row['statut']              as CampagneStatut,
+    mode:                (row['mode'] as CampagneMode | null) ?? 'complet',
     perimetre:           (row['perimetre'] ?? [])   as string[],
     createdBy:           row['created_by']          as string,
     createdAt:           row['created_at']          as string,
@@ -137,6 +138,7 @@ export async function createCampagne(
       date_ouverture:     payload.dateOuverture,
       date_fermeture:     payload.dateFermeture,
       statut:             payload.statut,
+      mode:               payload.mode,
       perimetre:          payload.perimetre,
       evaluateur_id:      payload.evaluateurId  ?? null,
       evaluateur_name:    payload.evaluateurName ?? null,
@@ -187,6 +189,7 @@ export async function updateCampagne(
   if (data.dateOuverture     !== undefined) row['date_ouverture']      = data.dateOuverture;
   if (data.dateFermeture     !== undefined) row['date_fermeture']      = data.dateFermeture;
   if (data.statut            !== undefined) row['statut']              = data.statut;
+  if (data.mode              !== undefined) row['mode']                = data.mode;
   if (data.perimetre         !== undefined) row['perimetre']           = data.perimetre;
   if (data.evaluateurId      !== undefined) row['evaluateur_id']       = data.evaluateurId ?? null;
   if (data.evaluateurName    !== undefined) row['evaluateur_name']     = data.evaluateurName ?? null;

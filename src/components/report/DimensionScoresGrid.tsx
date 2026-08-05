@@ -6,7 +6,7 @@ import type { Referentiel, DimensionDef } from '@/types'
 
 interface DimensionScoresGridProps {
   referentiel: Referentiel
-  scoresParDimension: Record<string, number>
+  scoresParDimension: Record<string, number | null>
 }
 
 // ── Component ────────────────────────────────────────────────────────────────

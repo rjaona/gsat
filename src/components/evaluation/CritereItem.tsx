@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ScorePicker } from './ScorePicker';
 import type { CritereDef, Score } from '@/types';
 import type { ValeurScore } from './ScorePicker';
+import type { ErpSnapshot } from '@/services/erpService';
 
 /**
  * `note` peut valoir undefined : c'est « pas repondu », distinct de null qui
@@ -20,6 +21,7 @@ interface CritereItemProps {
   disabled?: boolean;
   isKO?: boolean;
   commentaireManquant?: boolean;
+  erpSnapshot?: ErpSnapshot | null;
 }
 
 export function CritereItem({
@@ -31,9 +33,19 @@ export function CritereItem({
   disabled = false,
   isKO = false,
   commentaireManquant = false,
+  erpSnapshot = null,
 }: CritereItemProps) {
   const { t, i18n } = useTranslation();
   const lang = i18n.language.startsWith('en') ? 'en' : 'fr';
+
+  // Indicateurs ERP éclairant ce critère ET réellement présents dans le snapshot.
+  // Vide → aucun encart (jamais de bloc vide).
+  const erpMatches = (critere.indicateurErp ?? [])
+    .filter(cle => erpSnapshot != null && cle in erpSnapshot.indicateurs)
+    .map(cle => ({ cle, valeur: erpSnapshot!.indicateurs[cle] }));
+  const erpDate = erpSnapshot
+    ? new Date(erpSnapshot.periode).toLocaleDateString(lang === 'en' ? 'en-GB' : 'fr-FR')
+    : '';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [textareaFocused, setTextareaFocused] = useState(false);
@@ -112,6 +124,23 @@ export function CritereItem({
               </span>
             )}
 
+            {/* Extension (hors socle) */}
+            {critere.socle === false && (
+              <span
+                style={{
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--surface-container-highest)',
+                  color: 'var(--text-muted)',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                {t('evaluation.extension')}
+              </span>
+            )}
+
             {/* KO */}
             {isKO && (
               <span
@@ -186,6 +215,17 @@ export function CritereItem({
         disabled={disabled}
         essentiel={critere.essentiel}
       />
+
+      {/* ── Encart indicateur ERP (informatif, sans jugement ni couleur) ── */}
+      {erpMatches.length > 0 && (
+        <div style={{ background: 'var(--surface-container-high)', borderRadius: 'var(--radius-lg)', padding: '8px 12px' }}>
+          {erpMatches.map(m => (
+            <p key={m.cle} style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+              {t('evaluation.erpDonnees', { date: erpDate, valeur: String(m.valeur) })}
+            </p>
+          ))}
+        </div>
+      )}
 
       {/* ── Commentaire ── */}
       <div>

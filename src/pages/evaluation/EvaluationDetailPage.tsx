@@ -25,12 +25,9 @@ export function EvaluationDetailPage() {
   const { t } = useTranslation()
   const { role } = useAuthStore()
 
-  // Subscribe to referentiel
-  const { referentiel, subscribe: subscribeRef } = useReferentielStore()
-  useEffect(() => {
-    const unsub = subscribeRef()
-    return unsub
-  }, [subscribeRef])
+  // Référentiel : la valeur courante du store (null tant que non chargé).
+  const subscribeRef = useReferentielStore(s => s.subscribe)
+  const referentiel = useReferentielStore(s => s.referentiel())
 
   // Subscribe to evaluation
   const { evaluation, loading: evalLoading, error } = useEvaluationDetail(evalId)
@@ -44,6 +41,17 @@ export function EvaluationDetailPage() {
     const unsub = subscribeCampagnes()
     return unsub
   }, [subscribeCampagnes])
+
+  // La version du référentiel vient TOUJOURS de la campagne de l'évaluation,
+  // jamais d'un défaut codé en dur.
+  const refVersion = evaluation
+    ? campagnes.find(c => c.id === evaluation.campagneId)?.referentielVersion
+    : undefined
+  useEffect(() => {
+    if (!refVersion) return
+    const unsub = subscribeRef(refVersion)
+    return unsub
+  }, [subscribeRef, refVersion])
 
   // Load organisations for name resolution
   const [orgs, setOrgs] = useState<Organisation[]>([])
