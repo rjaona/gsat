@@ -10,6 +10,8 @@ import { uploadPreuve, calculerScores } from '@/services/evaluationService';
 import { getErpSnapshotCourant, type ErpSnapshot } from '@/services/erpService';
 import { useAuthStore } from '@/stores/authStore';
 import { useEvaluationStore, type ScoreInput } from '@/stores/evaluationStore';
+import { SaveStatusIndicator, type SaveStatus } from '@/components/ui';
+import { generatePrepSheet } from '@/services/pdf/prepSheet';
 
 interface EvaluationFormProps {
   evalId: string;
@@ -21,6 +23,12 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
   const navigate = useNavigate();
   const referentiel = useReferentielStore(s => s.referentiel());
   const campagneMode = useEvaluationStore(s => s.campagneMode);
+  const loadingScore = useEvaluationStore(s => s.loadingScore);
+  const storeError = useEvaluationStore(s => s.error);
+  // Indicateur réseau permanent (mesure 5) dérivé de l'état d'écriture par note.
+  const saveStatus: SaveStatus = storeError
+    ? 'error'
+    : Object.values(loadingScore).some(Boolean) ? 'saving' : 'saved';
 
   // Souscrit en temps réel à l'évaluation — indispensable pour alimenter le store
   useEvaluationDetail(evalId);
@@ -118,6 +126,29 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
     [evaluation, user]
   );
 
+  // Mesure 3 : reprise au critère EXACT où l'utilisateur s'est arrêté (1er non répondu).
+  const resume = useMemo(() => {
+    if (!referentiel) return null;
+    for (const dim of referentiel.dimensions) {
+      const c = dim.criteres.find(cr => cr.actif && (campagneMode !== 'socle' || cr.socle !== false) && !(cr.code in scores));
+      if (c) return { dimCode: dim.code, critereCode: c.code };
+    }
+    return null;
+  }, [referentiel, scores, campagneMode]);
+  const [reprisFait, setReprisFait] = useState(false);
+  useEffect(() => {
+    if (reprisFait || !resume || Object.keys(scores).length === 0) return;
+    const el = document.getElementById(`critere-${resume.critereCode}`);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); setReprisFait(true); }
+  }, [resume, scores, reprisFait]);
+
+  // Mesure 1 : fiche de préparation papier (socle si campagne socle).
+  const handleFiche = useCallback(() => {
+    if (!referentiel) return;
+    const doc = generatePrepSheet(referentiel, campagneMode, { orgName: evaluation?.orgId });
+    doc.save(`fiche-preparation-${referentiel.version}.pdf`);
+  }, [referentiel, campagneMode, evaluation?.orgId]);
+
   const handleSoumettre = async () => {
     setSubmitError(null);
     setSubmitting(true);
@@ -182,7 +213,19 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
             {t('evaluation.campagne')} — {evaluation.campagneId}
           </p>
         </div>
-        <EvaluationWorkflowBadge statut={evaluation.statut} />
+        <div className="flex items-center gap-2 flex-wrap">
+          <SaveStatusIndicator status={saveStatus} />
+          <button
+            type="button"
+            onClick={handleFiche}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+            style={{ background: 'var(--surface-container-highest)', color: 'var(--primary)' }}
+          >
+            <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+            {t('evaluation.ficheReparation')}
+          </button>
+          <EvaluationWorkflowBadge statut={evaluation.statut} />
+        </div>
       </div>
 
       {/* Bannière lecture seule */}
@@ -235,7 +278,7 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
             onUploadPreuve={handleUploadPreuve}
             uploadProgress={uploadProgress}
             disabled={isReadOnly || loading}
-            defaultOpen={idx === 0}
+            defaultOpen={resume ? dim.code === resume.dimCode : idx === 0}
             mode={campagneMode}
             erpSnapshot={erpSnapshot}
           />

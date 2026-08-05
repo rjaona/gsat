@@ -215,6 +215,8 @@ export const en = {
     extension: 'Extension',
     sectionExtension: 'Going further — not counted in the score',
     brancheRevision: 'Revision requested: validated → in progress',
+    ficheReparation: 'Preparation sheet',
+    reseau: { saved: 'Saved', saving: 'Saving…', error: 'Failed', retry: 'Retry' },
     erpDonnees: 'ERPTEM data as of {{date}}: {{valeur}}',
     guide: 'Interpretation guide',
     progression: 'Progress',
