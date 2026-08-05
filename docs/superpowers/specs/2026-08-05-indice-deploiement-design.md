@@ -109,24 +109,40 @@ La fonction ne fait **aucune I/O** — que de l'arithmétique sur ses entrées.
 
 ## 4. Plombage : `indiceService.ts`
 
-Un seul service, quatre lectures, **toutes sous le JWT de l'utilisateur** (OSN / région /
+Un seul service, en **lecture seule sous le JWT de l'utilisateur** (OSN / région /
 admin). Le service fetch et assemble ; il ne fait **aucune** arithmétique.
 
-1. **Campagne pilote far_v1_0** — la campagne dont `referentiel_version = far_v1_0`.
-2. **Évals participantes** — `from('evaluations').eq('campagne_id', …)`, jointes à
-   `organisations` pour le `poids`. Filtrées à celles qui ont des scores → matérialise
-   le garde-fou #1 (participants uniquement).
-3. **Scores en batch** — **un seul** `from('evaluation_scores').in('eval_id', [ids])`
-   (33 × 76 ≈ 2 500 lignes, négligeable).
-4. **Éval nationale OSN v3_0 + ses scores** → `notesNationales` (note par critère).
+**⚠️ Schéma réel (vérifié en base).** `evaluations` **n'a pas** de colonne
+`referentiel_version` — la version vit sur `campagnes.referentiel_version`. Toute
+sélection par version passe donc **par la campagne**, jamais par `evaluations` en
+direct.
 
-**Décision RLS clé.** `fn_moyenne_nationale` ne renvoie qu'un agrégat, insuffisant pour
-`note_nationale(X)` par critère. On lit donc les `evaluation_scores` de l'éval nationale
-**en clair** — ce qui est légitime **parce que la page est réservée à OSN / région /
-admin**, rôles qui possèdent déjà cette évaluation et la lisent sous leur propre JWT.
-**Pas de nouvelle fonction SECURITY DEFINER.** Le `responsable_asn` n'a **jamais** accès
-à cette page ni à ces données (RoleGuard strict) — l'isolation Faritany prouvée au Lot 1
-est préservée.
+**Côté Faritany — toutes les vagues.** L'ouverture se fait « par vagues, une province à
+la fois » (§2.1) : un cycle est réparti sur **plusieurs campagnes** far_v1_0. L'ID doit
+donc couvrir **toutes** les évals far_v1_0, pas une seule campagne (décision utilisateur
+2026-08-05).
+1. Ids des campagnes far_v1_0 : `campagnes.select('id').eq('referentiel_version','far_v1_0')`.
+2. Évals de ces campagnes : `evaluations.in('campagne_id', farCampIds)` (id, org_id, created_at).
+   **Dédup : dernière éval par Faritany** (max `created_at` par `org_id`) — un Faritany
+   réévalué sur un cycle ultérieur n'est compté qu'une fois, avec son état le plus récent.
+3. `poids` des orgs concernées : `organisations.in('id', orgIds)`.
+4. Scores en **un seul batch** : `evaluation_scores.in('eval_id', [candidateEvalIds])`.
+   `evalsParticipantes` = les évals dédupliquées ayant **≥ 1 score** (garde-fou #1).
+
+**Côté national — auto-éval OSN v3_0, via la campagne.**
+5. Ids des campagnes v3_0 : `campagnes.select('id').eq('referentiel_version','v3_0')`.
+   Si aucune → `notesNationales` vide (ID-only, écarts indéfinis — garde-fou #4).
+6. Éval nationale = éval de ces campagnes, **statut `validee` préféré**, sinon la plus
+   récente (`created_at` desc). C'est l'« Évaluation nationale v3_0 existante » de l'OSN.
+7. Ses `evaluation_scores` → `notesNationales` (note par critère, `null` = N/A préservé).
+
+**Décision RLS clé.** `fn_moyenne_nationale` (Lot 1) ne renvoie qu'un **agrégat par
+dimension** issu de `dashboard_stats`, **pas** de note par critère — inutilisable ici.
+On lit donc les `evaluation_scores` de l'éval nationale **en clair**, légitime **parce
+que la page est réservée à OSN / région / admin**, rôles qui possèdent déjà cette
+évaluation et la lisent sous leur propre JWT. **Pas de nouvelle fonction SECURITY
+DEFINER.** Le `responsable_asn` n'a **jamais** accès à cette page ni à ces données
+(RoleGuard strict) — l'isolation Faritany prouvée au Lot 1 est préservée.
 
 Le service assemble `{ refFar, evalsParticipantes, poids, notesNationales }` et délègue
 à `calculerIndiceDeploiement`.
