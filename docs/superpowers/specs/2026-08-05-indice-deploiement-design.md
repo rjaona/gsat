@@ -60,16 +60,28 @@ Réutilise `scoring.ts` (`calculerScoreDimension`) pour `score_f(X)` — **pas d
 implémentation du scoring** (le trap n°1 de la passation ; parité `scoring.ts` ≡
 `fn_recalculate_scores` déjà prouvée 12/12).
 
+**Définition de `score_f(X)` (unifiée, non ambiguë).**
+`score_f(X)` = moyenne, ramenée sur 0–100, des notes que le Faritany f a **réellement
+attribuées** aux enfants de X. Un enfant **absent** de la saisie de f (non présenté en
+mode socle, ou simplement non renseigné) **et** un enfant **N/A** sont **tous deux
+exclus** du calcul — ni l'un ni l'autre n'est une preuve de déploiement, dans un sens
+ou dans l'autre. Si f n'a scoré **aucun** enfant de X ⇒ `score_f(X) = null` ⇒ f ne
+contribue pas à `ID(X)`.
+C'est **différent** du score de conformité GSAT (`calculerScoreDimension`, où un enfant
+absent compte **0** = non-conformité). Deux questions, deux dénominateurs — d'où un
+**atome séparé** `scoreSurCriteres`, à ne jamais « harmoniser » avec
+`calculerScoreDimension`.
+
 **Cinq garde-fous, explicites dans le contrat de la fonction :**
 
 1. **Σ_f = Faritany PARTICIPANTS uniquement.** On itère sur les évaluations
    **existantes**, jamais sur les 33 orgs. Un Faritany sans éval est **absent** de la
    moyenne, pas noté 0.
    *Piège :* `calculerScoreDimension` sur une map de scores vide renvoie **0, pas
-   null** (absent = 0). Un Faritany non participant traité comme 33ᵉ org tirerait donc
-   l'ID vers le bas comme un vrai zéro. À l'intérieur d'une vraie éval, un enfant absent
-   = 0 reste correct (non-conformité réelle) ; c'est l'**absence d'éval** qui doit être
-   exclue, pas l'absence de réponse.
+   null** (absent = 0). Un Faritany non participant traité comme 33ᵉ org tirerait l'ID
+   vers le bas comme un vrai zéro. La parade est structurelle : `evalsParticipantes` se
+   construit **à partir des évals**, jamais des 33 orgs ; et `score_f` via
+   `scoreSurCriteres` **exclut** les enfants non scorés (voir définition ci-dessus).
 
 2. **Jointure des codes prouvée.** `X ∈ c.sourceCodes` ⇒ `note_nationale(X)` via les
    `evaluation_scores` de l'éval OSN v3_0. Vérifié : les **88/88** codes distincts
@@ -77,10 +89,12 @@ implémentation du scoring** (le trap n°1 de la passation ; parité `scoring.ts
    `referentiel_v3_0.json`. `evaluation_scores.critere_code === criteres.code` par
    construction.
 
-3. **Mode de `score_f(X)` = tous les enfants réellement scorés**, indépendamment du
-   gating socle/complet de la campagne. L'ID mesure le déploiement du standard
-   **national**, pas la complétude d'une campagne. Décision explicite — pas un héritage
-   silencieux du défaut de `calculerScoreDimension`.
+3. **Indépendant du gating socle/complet.** Aucune notion de mode dans `scoreSurCriteres` :
+   le dénominateur = les enfants **réellement scorés** par f (voir définition unifiée).
+   Un Faritany en socle qui n'a pas d'enfants extension dans sa saisie n'est donc ni
+   pénalisé ni récompensé pour eux — ils sont simplement absents de son `score_f`. L'ID
+   mesure le déploiement du standard **national**, pas la complétude d'une campagne.
+   Les enfants **inactifs** (`c.actif === false`) sont exclus du mapping des enfants.
 
 4. **Note nationale N/A ou absente ⇒ `ecart = undefined`** → afficher l'ID seul, pas de
    nombre bidon. De même, si aucun Faritany n'a scoré X ⇒ `id = null` (et `ecart`
