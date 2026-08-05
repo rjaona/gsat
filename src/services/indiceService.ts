@@ -14,72 +14,89 @@ type Row = Record<string, unknown>;
 
 /**
  * Indice de Déploiement (§6) — lecture seule, sous le JWT de l'utilisateur.
- * Réservé côté route/UI à admin_global | responsable_osn | responsable_region :
- * ces rôles lisent l'éval nationale et les évals des Faritany descendants sans
- * SECURITY DEFINER. Ne modifie jamais le score GSAT.
+ * Réservé côté route/UI à admin_global | responsable_osn | responsable_region.
+ * Ne modifie jamais le score GSAT.
+ *
+ * ⚠️ Schéma : `evaluations` n'a PAS de `referentiel_version` — la version vit sur
+ * `campagnes`. On sélectionne donc toujours par campagne.
+ * Côté far : TOUTES les campagnes far_v1_0 (ouverture par vagues), dédup dernière
+ * éval par Faritany. Côté national : auto-éval OSN v3_0 (statut validée préféré).
  */
 export async function getIndiceDeploiement(): Promise<IndiceCritereNational[]> {
   const refFar = await getReferentiel(VERSION_FAR);
   if (!refFar) return [];
 
-  // 1. Campagne far la plus récente.
-  const { data: camps, error: eCamp } = await supabase
-    .from('campagnes').select('id, date_ouverture')
-    .eq('referentiel_version', VERSION_FAR)
-    .order('date_ouverture', { ascending: false });
-  if (eCamp) throw eCamp;
-  const campFar = (camps ?? [])[0] as Row | undefined;
-  if (!campFar) return [];
+  // ── Côté Faritany : toutes les campagnes far_v1_0 ──
+  const { data: farCamps, error: eFC } = await supabase
+    .from('campagnes').select('id').eq('referentiel_version', VERSION_FAR);
+  if (eFC) throw eFC;
+  const farCampIds = (farCamps ?? []).map((c) => (c as Row)['id'] as string);
+  if (farCampIds.length === 0) return [];
 
-  // 2. Évals far de cette campagne + poids des orgs.
-  const { data: evalsFarRaw, error: eEv } = await supabase
-    .from('evaluations').select('id, org_id')
-    .eq('campagne_id', campFar['id'] as string);
+  const { data: farEvalsRaw, error: eEv } = await supabase
+    .from('evaluations').select('id, org_id, created_at')
+    .in('campagne_id', farCampIds)
+    .order('created_at', { ascending: false });
   if (eEv) throw eEv;
-  const evalsFar = (evalsFarRaw ?? []) as Row[];
-  if (evalsFar.length === 0) return [];
+  const farEvals = (farEvalsRaw ?? []) as Row[];
+  if (farEvals.length === 0) return [];
 
-  const orgIds = [...new Set(evalsFar.map((e) => e['org_id'] as string))];
+  // Dédup : dernière éval par org (liste déjà triée created_at desc → 1er vu = plus récent).
+  const latestByOrg = new Map<string, string>(); // org_id -> eval_id
+  for (const e of farEvals) {
+    const org = e['org_id'] as string;
+    if (!latestByOrg.has(org)) latestByOrg.set(org, e['id'] as string);
+  }
+  const candidateEvalIds = [...latestByOrg.values()];
+  const orgIds = [...latestByOrg.keys()];
+
   const { data: orgsRaw, error: eOrg } = await supabase
     .from('organisations').select('id, poids').in('id', orgIds);
   if (eOrg) throw eOrg;
   const poids: Record<string, number> = {};
   for (const o of (orgsRaw ?? []) as Row[]) poids[o['id'] as string] = (o['poids'] as number | null) ?? 1;
 
-  // 3. Scores far en batch (un seul appel).
-  const evalIds = evalsFar.map((e) => e['id'] as string);
   const { data: scoresRaw, error: eSc } = await supabase
     .from('evaluation_scores').select('eval_id, critere_code, note')
-    .in('eval_id', evalIds);
+    .in('eval_id', candidateEvalIds);
   if (eSc) throw eSc;
   const scoresParEval = new Map<string, ScoreMap>();
   for (const r of (scoresRaw ?? []) as Row[]) {
-    const evalId = r['eval_id'] as string;
-    const map = scoresParEval.get(evalId) ?? {};
-    map[r['critere_code'] as string] = (r['note'] as number | null);
-    scoresParEval.set(evalId, map);
+    const id = r['eval_id'] as string;
+    const map = scoresParEval.get(id) ?? {};
+    map[r['critere_code'] as string] = r['note'] as number | null;
+    scoresParEval.set(id, map);
   }
-  // Participantes = évals qui ont au moins un score.
-  const evalsParticipantes: EvalFaritanyParticipante[] = evalsFar
-    .filter((e) => scoresParEval.has(e['id'] as string))
-    .map((e) => ({ orgId: e['org_id'] as string, scores: scoresParEval.get(e['id'] as string) as ScoreMap }));
+  // Participantes = évals dédupliquées ayant ≥1 score.
+  const evalsParticipantes: EvalFaritanyParticipante[] = [];
+  for (const [org, evalId] of latestByOrg) {
+    const scores = scoresParEval.get(evalId);
+    if (scores) evalsParticipantes.push({ orgId: org, scores });
+  }
 
-  // 4. Éval nationale v3_0 → notes par critère.
+  // ── Côté national : auto-éval OSN v3_0 (via campagne), validée préférée ──
   const notesNationales: Record<string, number | null> = {};
-  const { data: evalNat, error: eNat } = await supabase
-    .from('evaluations').select('id')
-    .eq('referentiel_version', VERSION_NAT)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (eNat) throw eNat;
-  if (evalNat) {
-    const { data: natScores, error: eNs } = await supabase
-      .from('evaluation_scores').select('critere_code, note')
-      .eq('eval_id', (evalNat as Row)['id'] as string);
-    if (eNs) throw eNs;
-    for (const r of (natScores ?? []) as Row[]) {
-      notesNationales[r['critere_code'] as string] = (r['note'] as number | null);
+  const { data: natCamps, error: eNC } = await supabase
+    .from('campagnes').select('id').eq('referentiel_version', VERSION_NAT);
+  if (eNC) throw eNC;
+  const natCampIds = (natCamps ?? []).map((c) => (c as Row)['id'] as string);
+  if (natCampIds.length > 0) {
+    const { data: natEvalsRaw, error: eNE } = await supabase
+      .from('evaluations').select('id, statut, created_at')
+      .in('campagne_id', natCampIds)
+      .order('created_at', { ascending: false });
+    if (eNE) throw eNE;
+    const natEvals = (natEvalsRaw ?? []) as Row[];
+    // Validée préférée, sinon la plus récente (liste triée created_at desc).
+    const natEval = natEvals.find((e) => e['statut'] === 'validee') ?? natEvals[0];
+    if (natEval) {
+      const { data: natScores, error: eNS } = await supabase
+        .from('evaluation_scores').select('critere_code, note')
+        .eq('eval_id', natEval['id'] as string);
+      if (eNS) throw eNS;
+      for (const r of (natScores ?? []) as Row[]) {
+        notesNationales[r['critere_code'] as string] = r['note'] as number | null;
+      }
     }
   }
 

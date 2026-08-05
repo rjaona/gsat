@@ -8,24 +8,29 @@ const refFar = {
   ] }],
 };
 
-// Table -> réponses PostgREST simulées (voir builder plus bas).
 const db = vi.hoisted(() => ({ tables: {} as Record<string, unknown[]> }));
 
 vi.mock('@/services/referentielService', () => ({
   getReferentiel: vi.fn(async (v: string) => (v === 'far_v1_0' ? refFar : null)),
 }));
 
-// Builder minimal qui couvre .select().eq().order()/.in()/.maybeSingle() utilisés par le service.
+// Builder mock : select/eq/in/order (tri réel) + thenable (list). Pas de single/limit.
 vi.mock('@/services/supabase', () => {
   function from(table: string) {
     let rows = (db.tables[table] ?? []).slice();
     const api: Record<string, unknown> = {
       select: () => api,
-      order: () => api,
       eq: (col: string, val: unknown) => { rows = rows.filter((r) => (r as Record<string, unknown>)[col] === val); return api; },
       in: (col: string, vals: unknown[]) => { rows = rows.filter((r) => vals.includes((r as Record<string, unknown>)[col])); return api; },
-      limit: () => api,
-      maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
+      order: (col: string, opts?: { ascending?: boolean }) => {
+        const asc = opts?.ascending ?? true;
+        rows = rows.slice().sort((a, b) => {
+          const av = (a as Record<string, unknown>)[col] as string;
+          const bv = (b as Record<string, unknown>)[col] as string;
+          return (av > bv ? 1 : av < bv ? -1 : 0) * (asc ? 1 : -1);
+        });
+        return api;
+      },
       then: (resolve: (v: { data: unknown[]; error: null }) => void) => resolve({ data: rows, error: null }),
     };
     return api;
@@ -37,44 +42,51 @@ import { getIndiceDeploiement } from '@/services/indiceService';
 
 beforeEach(() => {
   db.tables = {
-    campagnes: [{ id: 'camp-far', referentiel_version: 'far_v1_0', date_ouverture: '2026-01-01' }],
-    // 3 évals far : e1 (org A, participante), e2 (org B, participante), e3 (org C, sans scores) + éval nationale n1 (OSN v3_0)
+    campagnes: [
+      { id: 'campF1', referentiel_version: 'far_v1_0' },
+      { id: 'campF2', referentiel_version: 'far_v1_0' },
+      { id: 'campN',  referentiel_version: 'v3_0' },
+    ],
     evaluations: [
-      { id: 'e1', campagne_id: 'camp-far', org_id: 'A', referentiel_version: 'far_v1_0' },
-      { id: 'e2', campagne_id: 'camp-far', org_id: 'B', referentiel_version: 'far_v1_0' },
-      { id: 'e3', campagne_id: 'camp-far', org_id: 'C', referentiel_version: 'far_v1_0' },
-      { id: 'n1', campagne_id: 'camp-nat', org_id: 'OSN', referentiel_version: 'v3_0' },
+      // A évaluée 2 fois : ancienne (campF1, score 0) et récente (campF2, score 100) → dédup garde la récente
+      { id: 'eA_old', campagne_id: 'campF1', org_id: 'A', created_at: '2026-01-01' },
+      { id: 'eA_new', campagne_id: 'campF2', org_id: 'A', created_at: '2026-06-01' },
+      { id: 'eB',     campagne_id: 'campF1', org_id: 'B', created_at: '2026-01-01' },
+      { id: 'eC',     campagne_id: 'campF2', org_id: 'C', created_at: '2026-06-01' }, // AUCUN score
+      // National : validée (ancienne, 401=3) + en_cours (récente, 401=1) → préférer la VALIDÉE
+      { id: 'nVal', campagne_id: 'campN', org_id: 'OSN', statut: 'validee',  created_at: '2026-02-01' },
+      { id: 'nCur', campagne_id: 'campN', org_id: 'OSN', statut: 'en_cours', created_at: '2026-07-01' },
     ],
     evaluation_scores: [
-      { eval_id: 'e1', critere_code: 'F1', note: 3 }, { eval_id: 'e1', critere_code: 'F2', note: 3 },
-      { eval_id: 'e2', critere_code: 'F1', note: 0 }, { eval_id: 'e2', critere_code: 'F2', note: 0 },
-      { eval_id: 'n1', critere_code: '401', note: 3 },
+      { eval_id: 'eA_old', critere_code: 'F1', note: 0 }, { eval_id: 'eA_old', critere_code: 'F2', note: 0 },
+      { eval_id: 'eA_new', critere_code: 'F1', note: 3 }, { eval_id: 'eA_new', critere_code: 'F2', note: 3 },
+      { eval_id: 'eB',     critere_code: 'F1', note: 0 }, { eval_id: 'eB',     critere_code: 'F2', note: 0 },
+      { eval_id: 'nVal', critere_code: '401', note: 3 },
+      { eval_id: 'nCur', critere_code: '401', note: 1 },
     ],
     organisations: [{ id: 'A', poids: 3 }, { id: 'B', poids: 1 }, { id: 'C', poids: 100 }],
   };
 });
 
 describe('getIndiceDeploiement', () => {
-  it('agrège les évals far participantes, pondère, et calcule l\'écart vs note nationale', async () => {
+  it('agrège toutes les campagnes far, dédup dernière éval/Faritany, préfère la note nationale validée', async () => {
     const res = await getIndiceDeploiement();
     const c401 = res.find((r) => r.code === '401')!;
-    // ID = (100*3 + 0*1)/4 = 75 ; écart = 3*100/3 - 75 = 25
+    // dédup A → eA_new (100), pas eA_old (0) ; C sans score exclue (poids 100 ne dilue pas)
+    // ID = (100*3 + 0*1) / (3+1) = 75
     expect(c401.id).toBe(75);
+    expect(c401.nbFaritanyContributeurs).toBe(2);
+    // note nationale = validée (3), PAS en_cours la plus récente (1) → écart = 3*100/3 − 75 = 25
     expect(c401.noteNationale).toBe(3);
     expect(c401.ecart).toBe(25);
-    expect(c401.nbFaritanyContributeurs).toBe(2);
   });
 
-  it("une éval sans aucun score n'est pas participante — org poids élevé ne dilue pas le calcul", async () => {
+  it('rend ID-only (écart indéfini) sans campagne nationale v3_0', async () => {
+    db.tables['campagnes'] = [{ id: 'campF1', referentiel_version: 'far_v1_0' }];
     const res = await getIndiceDeploiement();
-    const c401 = res.find((r) => r.code === '401')!;
-    // e3 (org C, poids=100) a été créée mais sans aucune ligne en evaluation_scores
-    // → C doit être exclue des participantes par le filtre .filter(e => scoresParEval.has(e.id))
-    // Si C n'était pas exclue et comptabilisée avec score 0 :
-    //   id = (100*3 + 0*1 + 0*100) / (3+1+100) ≈ 2.88
-    // Puisque C est exclue correctement :
-    //   id = (100*3 + 0*1) / (3+1) = 75 et nbFaritanyContributeurs = 2
-    expect(c401.id).toBe(75);
-    expect(c401.nbFaritanyContributeurs).toBe(2);
+    const c401 = res.find((r) => r.code === '401');
+    // A (eA_old=0), B (0) dans campF1 → ID = 0 ; aucune note nationale
+    expect(c401?.noteNationale).toBeNull();
+    expect(c401?.ecart).toBeUndefined();
   });
 });
