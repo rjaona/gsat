@@ -691,6 +691,31 @@ CREATE POLICY evals_update_resp_asn ON evaluations
     AND statut IN ('brouillon', 'en_cours', 'validee')  -- validee = auto-validation autorisée
   );
 
+-- Saisie des scores par le comité Faritany : la policy de base scores_write
+-- n'inclut pas 'responsable_asn', or CLAUDE.md lui attribue « saisie + auto-
+-- validation ». Sans cette policy, le comité ne peut pas noter (RLS violation).
+-- Même garde que les autres : sa propre org, éval en brouillon/en_cours.
+CREATE POLICY scores_write_resp_asn ON evaluation_scores
+  FOR ALL TO authenticated
+  USING (
+    (auth.jwt() ->> 'role') = 'responsable_asn'
+    AND EXISTS (
+      SELECT 1 FROM evaluations e
+      WHERE e.id = evaluation_scores.eval_id
+        AND e.org_id = (auth.jwt() ->> 'org_id')::uuid
+        AND e.statut IN ('brouillon', 'en_cours')
+    )
+  )
+  WITH CHECK (
+    (auth.jwt() ->> 'role') = 'responsable_asn'
+    AND EXISTS (
+      SELECT 1 FROM evaluations e
+      WHERE e.id = evaluation_scores.eval_id
+        AND e.org_id = (auth.jwt() ->> 'org_id')::uuid
+        AND e.statut IN ('brouillon', 'en_cours')
+    )
+  );
+
 -- Revue nationale : un relecteur (OSN / région / admin) arbitre une évaluation
 -- VALIDÉE de son sous-arbre → clôturée (approuvée) ou renvoyée en_cours (révision).
 -- La policy evals_update de base a un WITH CHECK NUL (donc = USING, qui exige
