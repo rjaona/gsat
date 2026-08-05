@@ -718,6 +718,13 @@ CREATE POLICY evals_update_revue ON evaluations
     statut IN ('cloturee', 'en_cours')   -- les deux issues de l'arbitrage
   );
 
+-- system_config : la seule policy (sysconfig_admin) réserve la lecture à
+-- admin_global, or DashboardOsnPage (responsable_osn) doit lire son propre
+-- libelle_niveau_local. Lecture de SA PROPRE config (non sensible) autorisée.
+CREATE POLICY sysconfig_select_own ON system_config
+  FOR SELECT TO authenticated
+  USING (org_id = (auth.jwt() ->> 'org_id')::uuid);
+
 -- Garde-fou serveur : le PV de comité est obligatoire pour auto-valider,
 -- et l'échéance de revue est posée automatiquement.
 CREATE OR REPLACE FUNCTION fn_garde_auto_validation()

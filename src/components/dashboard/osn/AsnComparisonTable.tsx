@@ -42,7 +42,9 @@ export function AsnComparisonTable({ rows, dimensionCodes, niveauLabel }: AsnCom
   const { t } = useTranslation()
   const [triCle, setTriCle] = useState<string | null>(null) // null = score global
   const [triAsc, setTriAsc] = useState(false)
-  const [ouverts, setOuverts] = useState<Set<string>>(new Set())
+  // Override explicite d'ouverture par province ; par défaut un groupe est ouvert
+  // s'il contient un Faritany du quartile bas (mise en avant sans clic).
+  const [toggled, setToggled] = useState<Record<string, boolean>>({})
 
   const seuil = useMemo(() => seuilQuartileBas(rows.map(r => r.scoreGlobal)), [rows])
   const groupes = useMemo(() => grouperAsnParProvince(rows, triCle, triAsc), [rows, triCle, triAsc])
@@ -52,8 +54,10 @@ export function AsnComparisonTable({ rows, dimensionCodes, niveauLabel }: AsnCom
     if (triCle === cle) setTriAsc(v => !v)
     else { setTriCle(cle); setTriAsc(false) }
   }
-  function bascule(prefixe: string) {
-    setOuverts(s => { const n = new Set(s); if (n.has(prefixe)) n.delete(prefixe); else n.add(prefixe); return n })
+  const estOuvert = (g: { prefixe: string; lignes: { scoreGlobal: number }[] }) =>
+    toggled[g.prefixe] ?? g.lignes.some(l => l.scoreGlobal <= seuil)
+  function bascule(g: { prefixe: string; lignes: { scoreGlobal: number }[] }) {
+    setToggled(m => ({ ...m, [g.prefixe]: !estOuvert(g) }))
   }
 
   const colLabel = niveauLabel ?? t('common.association', 'Association')
@@ -103,12 +107,12 @@ export function AsnComparisonTable({ rows, dimensionCodes, niveauLabel }: AsnCom
           </thead>
           <tbody className="divide-y divide-[#c6c5d2]/10">
             {groupes.map(g => {
-              const open = ouverts.has(g.prefixe)
+              const open = estOuvert(g)
               const nbBas = g.lignes.filter(l => l.scoreGlobal <= seuil).length
               return (
                 <Fragment key={g.prefixe}>
                   {/* En-tête province repliable */}
-                  <tr className="bg-[#f0f4fd] cursor-pointer hover:bg-[#e4e8f1]" onClick={() => bascule(g.prefixe)}>
+                  <tr className="bg-[#f0f4fd] cursor-pointer hover:bg-[#e4e8f1]" onClick={() => bascule(g)}>
                     <td colSpan={nbCols} className="px-6 py-3">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-[18px] text-[#454651]" style={{ transform: open ? 'rotate(90deg)' : 'none' }}>chevron_right</span>

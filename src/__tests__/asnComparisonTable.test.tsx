@@ -27,18 +27,23 @@ const rows = [
 afterEach(cleanup);
 
 describe('AsnComparisonTable — 33 lignes', () => {
-  it('affiche les groupes par province, lignes masquées par défaut', () => {
+  it('affiche les groupes par province ; un groupe sans quartile bas est replié', () => {
     render(<AsnComparisonTable rows={rows} dimensionCodes={['D01']} />);
     expect(screen.getByText('Antananarivo')).toBeTruthy();
     expect(screen.getByText('Toamasina')).toBeTruthy();
-    expect(screen.queryByText('ANT Faritany 1')).toBeNull(); // replié
+    expect(screen.queryByText('TOA Faritany 1')).toBeNull(); // TOA (60) pas quartile bas → replié
   });
 
-  it('révèle les lignes d’une province au clic', () => {
+  it('auto-ouvre le groupe contenant un Faritany du quartile bas', () => {
     render(<AsnComparisonTable rows={rows} dimensionCodes={['D01']} />);
-    fireEvent.click(screen.getByText('Antananarivo'));
+    // ANT contient la ligne de score 20 (quartile bas) → visible sans clic.
     expect(screen.getByText('ANT Faritany 1')).toBeTruthy();
-    expect(screen.getByText('ANT Faritany 2')).toBeTruthy();
+  });
+
+  it('révèle un groupe replié au clic', () => {
+    render(<AsnComparisonTable rows={rows} dimensionCodes={['D01']} />);
+    fireEvent.click(screen.getByText('Toamasina'));
+    expect(screen.getByText('TOA Faritany 1')).toBeTruthy();
   });
 
   it('signale le quartile bas (seuil 20 → 1 à surveiller)', () => {
