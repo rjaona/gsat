@@ -57,6 +57,24 @@ export function calculerScoreDimension(
 }
 
 /**
+ * Score sur un sous-ensemble ARBITRAIRE de critères (les enfants d'un critère
+ * national pour l'Indice de Déploiement, §6). Sémantique DIFFÉRENTE de
+ * `calculerScoreDimension` : ici un critère ABSENT de la saisie est EXCLU (pas
+ * compté 0), au même titre qu'un N/A — seules les notes réellement attribuées
+ * comptent. Rend `null` si aucun critère n'a été noté. NE PAS harmoniser avec
+ * `calculerScoreDimension` : ce sont deux questions distinctes (déploiement du
+ * standard national vs conformité GSAT).
+ */
+export function scoreSurCriteres(scores: ScoreMap, criteres: CritereDef[]): number | null {
+  const notes = criteres
+    .filter((c) => c.code in scores && !estNA(scores, c.code))
+    .map((c) => scores[c.code] as number);
+  if (notes.length === 0) return null;
+  const total = notes.reduce((sum, n) => sum + n, 0);
+  return round2((total / (notes.length * 3)) * 100);
+}
+
+/**
  * Score global : moyenne des dimensions comptables.
  * Les dimensions rendant `null` sont ignorées, pas comptées comme 0.
  */
