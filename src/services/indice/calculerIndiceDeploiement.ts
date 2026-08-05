@@ -52,7 +52,9 @@ export function calculerIndiceDeploiement(
     }
   }
 
-  const codes = [...enfantsParNational.keys()].sort();
+  const codes = [...enfantsParNational.keys()].sort(
+    (a, b) => (parseInt(a, 10) - parseInt(b, 10)) || a.localeCompare(b),
+  );
   return codes.map((code) => {
     const enfants = enfantsParNational.get(code) ?? [];
 

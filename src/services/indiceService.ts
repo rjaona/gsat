@@ -51,10 +51,17 @@ export async function getIndiceDeploiement(): Promise<IndiceCritereNational[]> {
   const orgIds = [...latestByOrg.keys()];
 
   const { data: orgsRaw, error: eOrg } = await supabase
-    .from('organisations').select('id, poids').in('id', orgIds);
+    .from('organisations').select('id, poids, parent_id').in('id', orgIds);
   if (eOrg) throw eOrg;
   const poids: Record<string, number> = {};
   for (const o of (orgsRaw ?? []) as Row[]) poids[o['id'] as string] = (o['poids'] as number | null) ?? 1;
+  // OSN(s) = parent(s) distinct(s) et non nul(s) des Faritany participantes.
+  // Le référentiel v3_0 est mondial (tous les OSN) → l'éval nationale DOIT être
+  // scopée à l'OSN propriétaire des Faritany, sinon on peut piocher l'éval
+  // d'un autre pays (RLS admin_global non scopée).
+  const osnOrgIds = [...new Set(
+    (orgsRaw ?? []).map((o) => (o as Row)['parent_id']).filter((p): p is string => typeof p === 'string'),
+  )];
 
   const { data: scoresRaw, error: eSc } = await supabase
     .from('evaluation_scores').select('eval_id, critere_code, note')
@@ -80,10 +87,11 @@ export async function getIndiceDeploiement(): Promise<IndiceCritereNational[]> {
     .from('campagnes').select('id').eq('referentiel_version', VERSION_NAT);
   if (eNC) throw eNC;
   const natCampIds = (natCamps ?? []).map((c) => (c as Row)['id'] as string);
-  if (natCampIds.length > 0) {
+  if (natCampIds.length > 0 && osnOrgIds.length > 0) {
     const { data: natEvalsRaw, error: eNE } = await supabase
-      .from('evaluations').select('id, statut, created_at')
+      .from('evaluations').select('id, statut, created_at, org_id')
       .in('campagne_id', natCampIds)
+      .in('org_id', osnOrgIds)
       .order('created_at', { ascending: false });
     if (eNE) throw eNE;
     const natEvals = (natEvalsRaw ?? []) as Row[];

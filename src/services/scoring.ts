@@ -65,6 +65,8 @@ export function calculerScoreDimension(
  * `calculerScoreDimension` : ce sont deux questions distinctes (déploiement du
  * standard national vs conformité GSAT).
  */
+/** Exempte du miroir SQL ci-dessus : pas de contrepartie dans fn_recalculate_scores,
+ * sémantique spécifique à l'Indice de Déploiement (§6). */
 export function scoreSurCriteres(scores: ScoreMap, criteres: CritereDef[]): number | null {
   const notes = criteres
     .filter((c) => c.code in scores && !estNA(scores, c.code))

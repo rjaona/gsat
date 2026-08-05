@@ -16,7 +16,7 @@ interface IndiceState {
 
 export const useIndiceStore = create<IndiceState>((set) => ({
   resultats: [],
-  loading: false,
+  loading: true,
   error: null,
   load: async () => {
     set({ loading: true, error: null });

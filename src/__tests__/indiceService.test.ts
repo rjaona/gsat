@@ -64,7 +64,11 @@ beforeEach(() => {
       { eval_id: 'nVal', critere_code: '401', note: 3 },
       { eval_id: 'nCur', critere_code: '401', note: 1 },
     ],
-    organisations: [{ id: 'A', poids: 3 }, { id: 'B', poids: 1 }, { id: 'C', poids: 100 }],
+    organisations: [
+      { id: 'A', poids: 3, parent_id: 'OSN' },
+      { id: 'B', poids: 1, parent_id: 'OSN' },
+      { id: 'C', poids: 100, parent_id: 'OSN' },
+    ],
   };
 });
 
@@ -142,5 +146,34 @@ describe('getIndiceDeploiement', () => {
     expect(c401.noteNationale).toBeNull();
     // écart indéfini quand note nationale est null
     expect(c401.ecart).toBeUndefined();
+  });
+
+  it('scope l\'éval nationale à l\'OSN parent des Faritany, ignore l\'éval plus récente d\'un autre OSN', async () => {
+    // Deux évals nationales validées : celle de l'OSN (parent de A/B/C) et un leurre
+    // d'un autre OSN (org_id différent), plus récente → ne doit PAS être choisie.
+    db.tables['evaluations'] = [
+      { id: 'eA_old', campagne_id: 'campF1', org_id: 'A', created_at: '2026-01-01' },
+      { id: 'eA_new', campagne_id: 'campF2', org_id: 'A', created_at: '2026-06-01' },
+      { id: 'eB',     campagne_id: 'campF1', org_id: 'B', created_at: '2026-01-01' },
+      { id: 'eC',     campagne_id: 'campF2', org_id: 'C', created_at: '2026-06-01' },
+      // National : OSN (validée, 401=3) + leurre OSN2 (validée, plus récente, 401=0)
+      { id: 'nOSN',     campagne_id: 'campN', org_id: 'OSN',  statut: 'validee', created_at: '2026-02-01' },
+      { id: 'nForeign', campagne_id: 'campN', org_id: 'OSN2', statut: 'validee', created_at: '2026-09-01' },
+    ];
+    db.tables['evaluation_scores'] = [
+      { eval_id: 'eA_old', critere_code: 'F1', note: 0 }, { eval_id: 'eA_old', critere_code: 'F2', note: 0 },
+      { eval_id: 'eA_new', critere_code: 'F1', note: 3 }, { eval_id: 'eA_new', critere_code: 'F2', note: 3 },
+      { eval_id: 'eB',     critere_code: 'F1', note: 0 }, { eval_id: 'eB',     critere_code: 'F2', note: 0 },
+      { eval_id: 'nOSN',     critere_code: '401', note: 3 },
+      { eval_id: 'nForeign', critere_code: '401', note: 0 },
+    ];
+    const res = await getIndiceDeploiement();
+    const c401 = res.find((r) => r.code === '401')!;
+    // ID = (100*3 + 0*1) / (3+1) = 75 (même que les autres tests)
+    expect(c401.id).toBe(75);
+    // Note nationale = celle de l'OSN (3), PAS 0 du leurre OSN2 plus récent
+    expect(c401.noteNationale).toBe(3);
+    // écart = 3*100/3 − 75 = 25
+    expect(c401.ecart).toBe(25);
   });
 });
