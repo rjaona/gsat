@@ -129,6 +129,8 @@ export const fr = {
       apercuRegional: 'Aperçu Régional des ASN',
       comparaisonNationale: 'Comparaison nationale vs objectif',
       prioritesPlanAction: "Priorités du Plan d'Action",
+      quartileBas: '{{count}} à surveiller',
+      aSurveiller: 'À surveiller',
       actionsTerminees: 'actions terminées',
       voirPlanComplet: 'Voir le Plan Complet',
       agregeNational: 'Agrégé — niveau national',

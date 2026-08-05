@@ -129,6 +129,8 @@ export const en = {
       apercuRegional: 'Regional NSA Overview',
       comparaisonNationale: 'National vs target comparison',
       prioritesPlanAction: 'Action Plan Priorities',
+      quartileBas: '{{count}} to watch',
+      aSurveiller: 'To watch',
       actionsTerminees: 'actions completed',
       voirPlanComplet: 'View Full Plan',
       agregeNational: 'Aggregated — national level',

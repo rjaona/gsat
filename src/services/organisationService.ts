@@ -56,6 +56,17 @@ export async function getOrganisation(id: string): Promise<Organisation | null> 
   return rowToOrg(data as Record<string, unknown>);
 }
 
+/** Libellé du niveau local d'une OSN (system_config.libelle_niveau_local, ex. 'Faritany'). */
+export async function getLibelleNiveauLocal(orgId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('system_config')
+    .select('libelle_niveau_local')
+    .eq('org_id', orgId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return (data as { libelle_niveau_local?: string | null }).libelle_niveau_local ?? null;
+}
+
 export async function listOrganisations(type?: OrgType, parentId?: string): Promise<Organisation[]> {
   let q = supabase.from('organisations').select('*').order('nom');
   if (type)     q = q.eq('type', type);
