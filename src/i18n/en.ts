@@ -25,6 +25,7 @@ export const en = {
     newEvaluation: 'New evaluation',
     aiAssistant: 'AI Assistant',
     groupAi: 'Artificial Intelligence',
+    indice: 'Deployment index',
   },
   common: {
     loading: 'Loading…',
@@ -188,6 +189,14 @@ export const en = {
       pageInfo: 'Page {{page}}',
       plusDeResultats: 'more results available',
       chargerPlus: 'Load more',
+    },
+    indice: {
+      titre: 'Deployment index',
+      sousTitre: 'Gap between the national GSAT score and the territorial deployment observed across Faritany.',
+      chargement: 'Computing…',
+      vide: 'No data: Faritany campaign or national evaluation missing.',
+      col: { critere: 'National criterion', noteNationale: 'National score', id: 'Index (0–100)', ecart: 'Gap', interpretation: 'Reading' },
+      interpretation: { alerte: 'Deployment failure', coherent: 'Consistent', bonne_pratique: 'Local best practice' },
     },
   },
   auth: {

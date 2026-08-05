@@ -24,6 +24,7 @@ const NAV_ITEMS: NavItem[] = [
 const ADMIN_ITEMS: NavItem[] = [
   { to: '/admin/cycles',         icon: 'event_repeat',    labelKey: 'nav.cycles',         roles: ['admin_global', 'responsable_region'] },
   { to: '/admin/revue',          icon: 'fact_check',      labelKey: 'nav.revue',          roles: ['admin_global', 'responsable_osn', 'responsable_region'] },
+  { to: '/dashboard/indice',     icon: 'travel_explore',  labelKey: 'nav.indice',         roles: ['admin_global', 'responsable_osn', 'responsable_region'] },
   { to: '/admin/users',          icon: 'manage_accounts', labelKey: 'nav.users',          roles: ['admin_global'] },
   { to: '/admin/organisations',  icon: 'corporate_fare',  labelKey: 'nav.organisations',  roles: ['admin_global'] },
   { to: '/admin/referential',    icon: 'menu_book',       labelKey: 'nav.referential',    roles: ['admin_global'] },

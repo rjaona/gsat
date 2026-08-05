@@ -6,8 +6,10 @@ Méthode : lecture du diff + vérification empirique sous vrais JWT (psql,
 sur Supabase local. Aucune correction appliquée — décisions à prendre ensuite.
 
 **Verdict : aucun BLOQUANT. A1 (majeur) RÉSOLU, C1 (parité) RÉSOLU+PROUVÉ.
-2 mineurs restants (E1, G1), documentés, non bloquants. Isolation Faritany A≠B
-vérifiée et tient.**
+Audit COMPLÉTÉ exhaustivement (A/B/D) → aucun constat supplémentaire. 2 mineurs
+documentés non bloquants (E1 migration one-shot, G1 couverture). Isolation
+Faritany A≠B vérifiée et tient. Seul résidu : `responsable_region` non prouvé en
+local (hiérarchie REGION non seedée) → à valider en staging.**
 
 ---
 
@@ -103,6 +105,25 @@ bloquant ; à couvrir si l'on veut un filet plus serré.
   le fallback mg→fr est volontaire (fichier mg partiel par design).
 - **Items différés-staging** correctement tracés dans `PASSATION_LOT1.md` (upload PV
   storage, `recipientId` notification, réactivation `edge_runtime`).
+
+## Complétion exhaustive A/B/D (2026-08-05) — aucun nouveau constat
+
+La passe représentative a été complétée à la lettre du plan. Résultat : **rien de
+neuf**, ce qui confirme que l'échantillonnage couvrait bien les classes à risque.
+
+- **B (mappers)** — TOUS les mappers Lot 1 confrontés colonne↔type. Les champs
+  optionnels utilisés par l'UI sont bien mappés (y compris en spread conditionnel :
+  `detail`/`critereCode` (alerte), `code`/`parentId`/`paysId`/`regionCode`/`coordonnees`
+  (org), `scoresAsn`/`nbAsn`/`tauxCompletionEval` (stats), `poids` (org). Les champs
+  requis sont garantis par tsc. Seul drop historique = `rowToStats.referentiel_version`,
+  déjà corrigé (P6). **Propre.**
+- **A (matrice rôles)** — écriture de campagne cohérente (RLS `campagnes_insert` =
+  `admin_global|responsable_region`, aligné sur `useCampagne.canManage`). `responsable_
+  region` **non testable en local** (TEM sans parent REGION seedé) → policies de
+  sous-arbre revues par lecture, à prouver en staging ou après seed de la hiérarchie
+  OMMS→REGION. Isolation `responsable_asn` déjà prouvée. **Pas de nouveau bug.**
+- **D (route/nav/i18n)** — aucun item de nav orphelin, aucun `navigate()` mort, toutes
+  les clés i18n référencées présentes en fr. **Propre.**
 
 ## Hors périmètre (noté)
 - Incohérence PRÉ-EXISTANTE : route `admin/cycles` RoleGuard=`[admin_global,

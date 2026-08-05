@@ -25,6 +25,7 @@ export const fr = {
     newEvaluation: 'Nouvelle évaluation',
     aiAssistant: 'Assistant IA',
     groupAi: 'Intelligence Artificielle',
+    indice: 'Indice de déploiement',
   },
   common: {
     loading: 'Chargement…',
@@ -188,6 +189,14 @@ export const fr = {
       pageInfo: 'Page {{page}}',
       plusDeResultats: 'plus de résultats disponibles',
       chargerPlus: 'Charger plus',
+    },
+    indice: {
+      titre: 'Indice de déploiement',
+      sousTitre: 'Écart entre la note nationale GSAT et le déploiement territorial constaté sur les Faritany.',
+      chargement: 'Calcul en cours…',
+      vide: 'Aucune donnée : campagne Faritany ou évaluation nationale absente.',
+      col: { critere: 'Critère national', noteNationale: 'Note nationale', id: 'Indice (0–100)', ecart: 'Écart', interpretation: 'Lecture' },
+      interpretation: { alerte: 'Déploiement défaillant', coherent: 'Cohérent', bonne_pratique: 'Bonne pratique locale' },
     },
   },
   auth: {

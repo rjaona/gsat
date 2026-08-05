@@ -20,6 +20,9 @@ const DashboardGlobalPage = lazy(() =>
 const DashboardFaritanyPage = lazy(() =>
   import('@/pages/dashboard/DashboardFaritanyPage').then(m => ({ default: m.DashboardFaritanyPage }))
 )
+const IndiceDeploiementPage = lazy(() =>
+  import('@/pages/dashboard/IndiceDeploiementPage').then(m => ({ default: m.IndiceDeploiementPage }))
+)
 const ValidationPage = lazy(() =>
   import('@/pages/evaluation/ValidationPage').then(m => ({ default: m.ValidationPage }))
 )
@@ -107,6 +110,7 @@ const LazyDashboardAsn = withSuspense(DashboardAsnPage)
 const LazyDashboardOsn = withSuspense(DashboardOsnPage)
 const LazyDashboardGlobal = withSuspense(DashboardGlobalPage)
 const LazyDashboardFaritany = withSuspense(DashboardFaritanyPage)
+const LazyIndice = withSuspense(IndiceDeploiementPage)
 const LazyValidation = withSuspense(ValidationPage)
 const LazyEvaluationList = withSuspense(EvaluationListPage)
 const LazyNewEvaluation = withSuspense(NewEvaluationPage)
@@ -146,6 +150,10 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard/osn',
         element: <RoleGuard roles={['admin_global', 'responsable_osn', 'responsable_region']}><LazyDashboardOsn /></RoleGuard>,
+      },
+      {
+        path: 'dashboard/indice',
+        element: <RoleGuard roles={['admin_global', 'responsable_osn', 'responsable_region']}><LazyIndice /></RoleGuard>,
       },
       {
         path: 'dashboard/global',
