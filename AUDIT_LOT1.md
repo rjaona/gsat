@@ -5,8 +5,9 @@ Méthode : lecture du diff + vérification empirique sous vrais JWT (psql,
 `set local role authenticated` + `request.jwt.claims`, en transaction rollback)
 sur Supabase local. Aucune correction appliquée — décisions à prendre ensuite.
 
-**Verdict : aucun BLOQUANT. A1 (majeur) RÉSOLU. 3 mineurs restants. Les propriétés
-de sécurité clés (isolation Faritany A≠B) sont vérifiées et tiennent.**
+**Verdict : aucun BLOQUANT. A1 (majeur) RÉSOLU, C1 (parité) RÉSOLU+PROUVÉ.
+2 mineurs restants (E1, G1), documentés, non bloquants. Isolation Faritany A≠B
+vérifiée et tient.**
 
 ---
 
@@ -51,7 +52,16 @@ régression Lot 1, mais une propriété de tout le fichier.
   mais pas les policies). Pour la rendre ré-entrante, préfixer chaque `CREATE
   POLICY` d'un `DROP POLICY IF EXISTS`.
 
-### C1 — MINEUR · parité scoring non vérifiée machine cette session
+### C1 — ✅ RÉSOLU + PROUVÉ · parité scoring machine-vérifiée
+**Résolution (2026-08-05)** : cible PG du test rendue paramétrable
+(`PGHOST/PGPORT/PGUSER/PGDATABASE`, défauts 5433/gsat conservés). Test exécuté
+contre l'instance locale (`PGPORT=54322 PGDATABASE=postgres PGPASSWORD=postgres`)
+→ **12/12 verts** : `scoring.ts` ≡ `fn_recalculate_scores` sur 12 tirages
+aléatoires (socle + complet, N/A / non répondu / notes 0-3). Le trap n°1 de la
+passation (scoring à deux endroits) est prouvé cohérent. À câbler tel quel dans un
+job CI (le test reste exclu des runs par défaut).
+
+<details><summary>Constat initial</summary>
 `parite-sql.diff.test.ts` (scoring.ts ≡ `fn_recalculate_scores`) cible en dur
 `psql -p 5433 -d gsat` ≠ instance locale (`54322/postgres`) → non exécutable ici
 (il reste exclu des runs par défaut). L'import `ref_db` a été corrigé (P1) mais la
@@ -60,6 +70,7 @@ cible PG reste fausse.
   MONTER le score D01 20→25 via le trigger, conforme au calcul scoring.ts.
 - **Reco** : aligner la cible PG du test (variable d'env) et l'exécuter dans un job
   CI dédié pour prouver la parité sur les 12 tirages aléatoires.
+</details>
 
 ### G1 — MINEUR (info) · trous de couverture
 Les tests ajoutés assertent un vrai comportement (pas tautologiques). Restent sans

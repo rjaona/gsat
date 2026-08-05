@@ -6,7 +6,9 @@ import { calculerScoreDimension, calculerScoreGlobal, getCriteresEssentielsKO } 
 import raw from '../data/far_v1_0.json';
 const ref_db = raw.dimensions;
 
-const PG = ['-h','127.0.0.1','-p','5433','-U','postgres','-d','gsat','-tAc'];
+// Cible PG paramétrable (CI / instance locale) ; défauts = job dédié 5433/gsat.
+const PG = ['-h', process.env['PGHOST'] ?? '127.0.0.1', '-p', process.env['PGPORT'] ?? '5433',
+            '-U', process.env['PGUSER'] ?? 'postgres', '-d', process.env['PGDATABASE'] ?? 'gsat', '-tAc'];
 const sql = (q: string) => execFileSync('psql', [...PG, q], { encoding: 'utf8' }).trim();
 
 const ref: any = { version: 'far_v1_0', nom: { fr: '', en: '' }, actif: true, dimensions: ref_db };
