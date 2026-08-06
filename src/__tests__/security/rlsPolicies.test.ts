@@ -323,7 +323,8 @@ describe('Securite — Scenarios d\'attaque', () => {
 
   it('elevation de privilege : un ASN ne peut pas devenir admin via les rules', () => {
     // Les custom claims sont injectes par le hook_custom_access_token (PostgreSQL)
-    // Les RLS lisent auth.jwt() ->> 'role', non modifiable cote client
+    // Les RLS lisent auth.jwt() ->> 'user_role' (le rôle applicatif ; 'role'
+    // reste le rôle Postgres 'authenticated'), non modifiable cote client
     const fakeAdmin: AuthContext = {
       uid: 'asn-ant',
       role: 'utilisateur_asn', // son vrai role

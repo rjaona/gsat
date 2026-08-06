@@ -1,7 +1,8 @@
 -- =============================================================================
 -- Custom Access Token Hook — Supabase
--- Injecte role, org_id, org_type, parent_org_id dans le JWT à chaque
--- émission de token (login + refresh).
+-- Injecte user_role, org_id, org_type, parent_org_id dans le JWT à chaque
+-- émission de token (login + refresh). Le rôle applicatif est exposé sous
+-- 'user_role' (le claim 'role' reste le rôle Postgres 'authenticated').
 --
 -- Enregistrement dans Supabase Dashboard :
 --   Auth > Hooks > Custom Access Token
@@ -49,8 +50,12 @@ BEGIN
   END IF;
 
   -- Construire les claims additionnels
+  -- NB : le rôle applicatif est exposé sous 'user_role', PAS 'role'. Le claim
+  -- 'role' est réservé par PostgREST/GoTrue au rôle Postgres (authenticated) et
+  -- sert au SET ROLE ; l'écraser avec un rôle applicatif casserait toute l'API.
+  -- Les policies RLS lisent donc auth.jwt() ->> 'user_role'.
   v_claims := jsonb_build_object(
-    'role',          COALESCE(v_role,     'lecteur'),
+    'user_role',     COALESCE(v_role,     'lecteur'),
     'org_id',        COALESCE(v_org_id,   ''),
     'org_type',      COALESCE(v_org_type, ''),
     'parent_org_id', COALESCE(v_parent,   '')

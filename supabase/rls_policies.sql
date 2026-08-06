@@ -5,7 +5,7 @@
 -- =============================================================================
 
 -- Helpers JWT inline (plus performant que des fonctions SQL appelées par row)
--- auth.jwt() ->> 'role'         → UserRole
+-- auth.jwt() ->> 'user_role'         → UserRole
 -- auth.jwt() ->> 'org_id'       → UUID (orgId de l'utilisateur)
 -- auth.jwt() ->> 'org_type'     → OrgType
 -- auth.jwt() ->> 'parent_org_id'→ UUID | null
@@ -49,8 +49,8 @@ CREATE POLICY pays_select_auth ON pays
 
 CREATE POLICY pays_write_admin ON pays
   FOR ALL TO authenticated
-  USING  ((auth.jwt() ->> 'role') = 'admin_global')
-  WITH CHECK ((auth.jwt() ->> 'role') = 'admin_global');
+  USING  ((auth.jwt() ->> 'user_role') = 'admin_global')
+  WITH CHECK ((auth.jwt() ->> 'user_role') = 'admin_global');
 
 -- =============================================================================
 -- ORGANISATIONS
@@ -64,8 +64,8 @@ CREATE POLICY orgs_select_auth ON organisations
 -- Écriture : admin_global uniquement
 CREATE POLICY orgs_write_admin ON organisations
   FOR ALL TO authenticated
-  USING  ((auth.jwt() ->> 'role') = 'admin_global')
-  WITH CHECK ((auth.jwt() ->> 'role') = 'admin_global');
+  USING  ((auth.jwt() ->> 'user_role') = 'admin_global')
+  WITH CHECK ((auth.jwt() ->> 'user_role') = 'admin_global');
 
 -- =============================================================================
 -- USERS
@@ -76,16 +76,16 @@ CREATE POLICY users_select_self ON users
   FOR SELECT TO authenticated
   USING (
     id = auth.uid()                                              -- soi-même
-    OR (auth.jwt() ->> 'role') = 'admin_global'                  -- admin voit tout
+    OR (auth.jwt() ->> 'user_role') = 'admin_global'                  -- admin voit tout
     OR (                                                         -- responsable_region : sa région + ses enfants
-      (auth.jwt() ->> 'role') = 'responsable_region'
+      (auth.jwt() ->> 'user_role') = 'responsable_region'
       AND (
         org_id = (auth.jwt() ->> 'org_id')::uuid
         OR parent_org_id = (auth.jwt() ->> 'org_id')::uuid
       )
     )
     OR (                                                         -- responsable_osn : son OSN + ASN enfants
-      (auth.jwt() ->> 'role') = 'responsable_osn'
+      (auth.jwt() ->> 'user_role') = 'responsable_osn'
       AND (
         org_id = (auth.jwt() ->> 'org_id')::uuid
         OR parent_org_id = (auth.jwt() ->> 'org_id')::uuid
@@ -116,8 +116,8 @@ CREATE POLICY refver_select_auth ON referentiel_versions
 
 CREATE POLICY refver_write_admin ON referentiel_versions
   FOR ALL TO authenticated
-  USING  ((auth.jwt() ->> 'role') = 'admin_global')
-  WITH CHECK ((auth.jwt() ->> 'role') = 'admin_global');
+  USING  ((auth.jwt() ->> 'user_role') = 'admin_global')
+  WITH CHECK ((auth.jwt() ->> 'user_role') = 'admin_global');
 
 CREATE POLICY dim_select_auth ON dimensions
   FOR SELECT TO authenticated
@@ -125,8 +125,8 @@ CREATE POLICY dim_select_auth ON dimensions
 
 CREATE POLICY dim_write_admin ON dimensions
   FOR ALL TO authenticated
-  USING  ((auth.jwt() ->> 'role') = 'admin_global')
-  WITH CHECK ((auth.jwt() ->> 'role') = 'admin_global');
+  USING  ((auth.jwt() ->> 'user_role') = 'admin_global')
+  WITH CHECK ((auth.jwt() ->> 'user_role') = 'admin_global');
 
 CREATE POLICY crit_select_auth ON criteres
   FOR SELECT TO authenticated
@@ -134,12 +134,12 @@ CREATE POLICY crit_select_auth ON criteres
 
 CREATE POLICY crit_write_admin ON criteres
   FOR ALL TO authenticated
-  USING  ((auth.jwt() ->> 'role') = 'admin_global')
-  WITH CHECK ((auth.jwt() ->> 'role') = 'admin_global');
+  USING  ((auth.jwt() ->> 'user_role') = 'admin_global')
+  WITH CHECK ((auth.jwt() ->> 'user_role') = 'admin_global');
 
 CREATE POLICY refhist_select_admin ON referentiel_history
   FOR SELECT TO authenticated
-  USING ((auth.jwt() ->> 'role') = 'admin_global');
+  USING ((auth.jwt() ->> 'user_role') = 'admin_global');
 
 -- =============================================================================
 -- CAMPAGNES
@@ -154,23 +154,23 @@ CREATE POLICY campagnes_select_auth ON campagnes
 CREATE POLICY campagnes_insert ON campagnes
   FOR INSERT TO authenticated
   WITH CHECK (
-    (auth.jwt() ->> 'role') IN ('admin_global', 'responsable_region')
+    (auth.jwt() ->> 'user_role') IN ('admin_global', 'responsable_region')
   );
 
 -- UPDATE : admin_global et responsable_region (propriétaire)
 CREATE POLICY campagnes_update ON campagnes
   FOR UPDATE TO authenticated
   USING (
-    (auth.jwt() ->> 'role') = 'admin_global'
+    (auth.jwt() ->> 'user_role') = 'admin_global'
     OR (
-      (auth.jwt() ->> 'role') = 'responsable_region'
+      (auth.jwt() ->> 'user_role') = 'responsable_region'
       AND organisateur_id = auth.uid()
     )
   )
   WITH CHECK (
-    (auth.jwt() ->> 'role') = 'admin_global'
+    (auth.jwt() ->> 'user_role') = 'admin_global'
     OR (
-      (auth.jwt() ->> 'role') = 'responsable_region'
+      (auth.jwt() ->> 'user_role') = 'responsable_region'
       AND organisateur_id = auth.uid()
     )
   );
@@ -178,7 +178,7 @@ CREATE POLICY campagnes_update ON campagnes
 -- DELETE : admin_global uniquement (et seulement si 0 évaluations — géré en application)
 CREATE POLICY campagnes_delete ON campagnes
   FOR DELETE TO authenticated
-  USING ((auth.jwt() ->> 'role') = 'admin_global');
+  USING ((auth.jwt() ->> 'user_role') = 'admin_global');
 
 -- =============================================================================
 -- EVALUATIONS
@@ -193,9 +193,9 @@ CREATE POLICY campagnes_delete ON campagnes
 CREATE POLICY evals_select ON evaluations
   FOR SELECT TO authenticated
   USING (
-    (auth.jwt() ->> 'role') = 'admin_global'
+    (auth.jwt() ->> 'user_role') = 'admin_global'
     OR (
-      (auth.jwt() ->> 'role') = 'responsable_region'
+      (auth.jwt() ->> 'user_role') = 'responsable_region'
       AND EXISTS (
         SELECT 1 FROM organisations o
         WHERE o.id = evaluations.org_id
@@ -204,7 +204,7 @@ CREATE POLICY evals_select ON evaluations
       )
     )
     OR (
-      (auth.jwt() ->> 'role') = 'responsable_osn'
+      (auth.jwt() ->> 'user_role') = 'responsable_osn'
       AND (
         org_id = (auth.jwt() ->> 'org_id')::uuid
         OR EXISTS (
@@ -221,12 +221,12 @@ CREATE POLICY evals_select ON evaluations
 CREATE POLICY evals_insert ON evaluations
   FOR INSERT TO authenticated
   WITH CHECK (
-    (auth.jwt() ->> 'role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
+    (auth.jwt() ->> 'user_role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
     AND (
-      (auth.jwt() ->> 'role') = 'admin_global'
+      (auth.jwt() ->> 'user_role') = 'admin_global'
       OR org_id = (auth.jwt() ->> 'org_id')::uuid
       OR (
-        (auth.jwt() ->> 'role') = 'responsable_osn'
+        (auth.jwt() ->> 'user_role') = 'responsable_osn'
         AND EXISTS (
           SELECT 1 FROM organisations o
           WHERE o.id = evaluations.org_id
@@ -242,13 +242,13 @@ CREATE POLICY evals_insert ON evaluations
 CREATE POLICY evals_update ON evaluations
   FOR UPDATE TO authenticated
   USING (
-    (auth.jwt() ->> 'role') = 'admin_global'
+    (auth.jwt() ->> 'user_role') = 'admin_global'
     OR (
-      (auth.jwt() ->> 'role') IN ('responsable_osn', 'evaluateur', 'utilisateur_asn')
+      (auth.jwt() ->> 'user_role') IN ('responsable_osn', 'evaluateur', 'utilisateur_asn')
       AND org_id = (auth.jwt() ->> 'org_id')::uuid
     )
     OR (
-      (auth.jwt() ->> 'role') IN ('responsable_region', 'responsable_osn', 'evaluateur')
+      (auth.jwt() ->> 'user_role') IN ('responsable_region', 'responsable_osn', 'evaluateur')
       AND statut IN ('soumise', 'validee')
     )
   );
@@ -264,14 +264,14 @@ CREATE POLICY scores_select ON evaluation_scores
       SELECT 1 FROM evaluations e WHERE e.id = evaluation_scores.eval_id
       -- hérite des rules de la table evaluations via la jointure
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR e.org_id = (auth.jwt() ->> 'org_id')::uuid
         OR (
-          (auth.jwt() ->> 'role') = 'responsable_osn'
+          (auth.jwt() ->> 'user_role') = 'responsable_osn'
           AND EXISTS (SELECT 1 FROM organisations o WHERE o.id = e.org_id AND o.parent_id = (auth.jwt() ->> 'org_id')::uuid)
         )
         OR (
-          (auth.jwt() ->> 'role') = 'responsable_region'
+          (auth.jwt() ->> 'user_role') = 'responsable_region'
           AND EXISTS (SELECT 1 FROM organisations o WHERE o.id = e.org_id AND (o.parent_id = (auth.jwt() ->> 'org_id')::uuid OR o.id = (auth.jwt() ->> 'org_id')::uuid))
         )
       )
@@ -281,25 +281,25 @@ CREATE POLICY scores_select ON evaluation_scores
 CREATE POLICY scores_write ON evaluation_scores
   FOR ALL TO authenticated
   USING (
-    (auth.jwt() ->> 'role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
+    (auth.jwt() ->> 'user_role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
     AND EXISTS (
       SELECT 1 FROM evaluations e
       WHERE e.id = evaluation_scores.eval_id
       AND e.statut IN ('brouillon', 'en_cours')
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR e.org_id = (auth.jwt() ->> 'org_id')::uuid
       )
     )
   )
   WITH CHECK (
-    (auth.jwt() ->> 'role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
+    (auth.jwt() ->> 'user_role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
     AND EXISTS (
       SELECT 1 FROM evaluations e
       WHERE e.id = evaluation_scores.eval_id
       AND e.statut IN ('brouillon', 'en_cours')
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR e.org_id = (auth.jwt() ->> 'org_id')::uuid
       )
     )
@@ -315,10 +315,10 @@ CREATE POLICY preuves_select ON evaluation_preuves
     EXISTS (
       SELECT 1 FROM evaluations e WHERE e.id = evaluation_preuves.eval_id
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR e.org_id = (auth.jwt() ->> 'org_id')::uuid
         OR (
-          (auth.jwt() ->> 'role') IN ('responsable_osn', 'responsable_region')
+          (auth.jwt() ->> 'user_role') IN ('responsable_osn', 'responsable_region')
           AND EXISTS (SELECT 1 FROM organisations o WHERE o.id = e.org_id AND o.parent_id = (auth.jwt() ->> 'org_id')::uuid)
         )
       )
@@ -328,13 +328,13 @@ CREATE POLICY preuves_select ON evaluation_preuves
 CREATE POLICY preuves_insert ON evaluation_preuves
   FOR INSERT TO authenticated
   WITH CHECK (
-    (auth.jwt() ->> 'role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
+    (auth.jwt() ->> 'user_role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
     AND EXISTS (
       SELECT 1 FROM evaluations e
       WHERE e.id = evaluation_preuves.eval_id
       AND e.statut IN ('brouillon', 'en_cours')
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR e.org_id = (auth.jwt() ->> 'org_id')::uuid
       )
     )
@@ -344,7 +344,7 @@ CREATE POLICY preuves_delete ON evaluation_preuves
   FOR DELETE TO authenticated
   USING (
     uploaded_by = auth.uid()
-    OR (auth.jwt() ->> 'role') = 'admin_global'
+    OR (auth.jwt() ->> 'user_role') = 'admin_global'
   );
 
 -- =============================================================================
@@ -354,10 +354,10 @@ CREATE POLICY preuves_delete ON evaluation_preuves
 CREATE POLICY plans_select ON plans_action
   FOR SELECT TO authenticated
   USING (
-    (auth.jwt() ->> 'role') = 'admin_global'
+    (auth.jwt() ->> 'user_role') = 'admin_global'
     OR org_id = (auth.jwt() ->> 'org_id')::uuid
     OR (
-      (auth.jwt() ->> 'role') IN ('responsable_osn', 'responsable_region')
+      (auth.jwt() ->> 'user_role') IN ('responsable_osn', 'responsable_region')
       AND EXISTS (
         SELECT 1 FROM organisations o
         WHERE o.id = plans_action.org_id
@@ -369,9 +369,9 @@ CREATE POLICY plans_select ON plans_action
 CREATE POLICY plans_insert ON plans_action
   FOR INSERT TO authenticated
   WITH CHECK (
-    (auth.jwt() ->> 'role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
+    (auth.jwt() ->> 'user_role') IN ('admin_global', 'responsable_osn', 'utilisateur_asn', 'evaluateur')
     AND (
-      (auth.jwt() ->> 'role') = 'admin_global'
+      (auth.jwt() ->> 'user_role') = 'admin_global'
       OR org_id = (auth.jwt() ->> 'org_id')::uuid
     )
   );
@@ -379,10 +379,10 @@ CREATE POLICY plans_insert ON plans_action
 CREATE POLICY plans_update ON plans_action
   FOR UPDATE TO authenticated
   USING (
-    (auth.jwt() ->> 'role') = 'admin_global'
+    (auth.jwt() ->> 'user_role') = 'admin_global'
     OR org_id = (auth.jwt() ->> 'org_id')::uuid
     OR (
-      (auth.jwt() ->> 'role') IN ('responsable_osn', 'responsable_region')
+      (auth.jwt() ->> 'user_role') IN ('responsable_osn', 'responsable_region')
       AND EXISTS (
         SELECT 1 FROM organisations o
         WHERE o.id = plans_action.org_id
@@ -401,10 +401,10 @@ CREATE POLICY pactions_select ON plan_actions
     EXISTS (
       SELECT 1 FROM plans_action p WHERE p.id = plan_actions.plan_id
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR p.org_id = (auth.jwt() ->> 'org_id')::uuid
         OR (
-          (auth.jwt() ->> 'role') IN ('responsable_osn', 'responsable_region')
+          (auth.jwt() ->> 'user_role') IN ('responsable_osn', 'responsable_region')
           AND EXISTS (SELECT 1 FROM organisations o WHERE o.id = p.org_id AND o.parent_id = (auth.jwt() ->> 'org_id')::uuid)
         )
       )
@@ -417,7 +417,7 @@ CREATE POLICY pactions_write ON plan_actions
     EXISTS (
       SELECT 1 FROM plans_action p WHERE p.id = plan_actions.plan_id
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR p.org_id = (auth.jwt() ->> 'org_id')::uuid
       )
     )
@@ -426,7 +426,7 @@ CREATE POLICY pactions_write ON plan_actions
     EXISTS (
       SELECT 1 FROM plans_action p WHERE p.id = plan_actions.plan_id
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR p.org_id = (auth.jwt() ->> 'org_id')::uuid
       )
     )
@@ -440,10 +440,10 @@ CREATE POLICY suivis_select ON action_suivis
       JOIN plans_action p ON p.id = a.plan_id
       WHERE a.id = action_suivis.action_id
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR p.org_id = (auth.jwt() ->> 'org_id')::uuid
         OR (
-          (auth.jwt() ->> 'role') IN ('responsable_osn', 'responsable_region')
+          (auth.jwt() ->> 'user_role') IN ('responsable_osn', 'responsable_region')
           AND EXISTS (SELECT 1 FROM organisations o WHERE o.id = p.org_id AND o.parent_id = (auth.jwt() ->> 'org_id')::uuid)
         )
       )
@@ -459,7 +459,7 @@ CREATE POLICY suivis_insert ON action_suivis
       JOIN plans_action p ON p.id = a.plan_id
       WHERE a.id = action_suivis.action_id
       AND (
-        (auth.jwt() ->> 'role') = 'admin_global'
+        (auth.jwt() ->> 'user_role') = 'admin_global'
         OR p.org_id = (auth.jwt() ->> 'org_id')::uuid
       )
     )
@@ -473,10 +473,10 @@ CREATE POLICY suivis_insert ON action_suivis
 CREATE POLICY dash_select ON dashboard_stats
   FOR SELECT TO authenticated
   USING (
-    (auth.jwt() ->> 'role') = 'admin_global'
+    (auth.jwt() ->> 'user_role') = 'admin_global'
     OR org_id = (auth.jwt() ->> 'org_id')::uuid
     OR (
-      (auth.jwt() ->> 'role') IN ('responsable_osn', 'responsable_region')
+      (auth.jwt() ->> 'user_role') IN ('responsable_osn', 'responsable_region')
       AND EXISTS (
         SELECT 1 FROM organisations o
         WHERE o.id = dashboard_stats.org_id
@@ -493,7 +493,7 @@ CREATE POLICY dash_select ON dashboard_stats
 CREATE POLICY audit_select ON audit_log
   FOR SELECT TO authenticated
   USING (
-    (auth.jwt() ->> 'role') = 'admin_global'
+    (auth.jwt() ->> 'user_role') = 'admin_global'
     OR user_id = auth.uid()
   );
 
@@ -523,7 +523,7 @@ CREATE POLICY notif_delete ON notifications
 CREATE POLICY notif_insert ON notifications
   FOR INSERT TO authenticated
   WITH CHECK (
-    (auth.jwt() ->> 'role') IN ('admin_global', 'responsable_region', 'responsable_osn', 'evaluateur')
+    (auth.jwt() ->> 'user_role') IN ('admin_global', 'responsable_region', 'responsable_osn', 'evaluateur')
     AND (sender_id IS NULL OR sender_id = auth.uid())
   );
 
@@ -533,8 +533,8 @@ CREATE POLICY notif_insert ON notifications
 
 CREATE POLICY sysconfig_admin ON system_config
   FOR ALL TO authenticated
-  USING  ((auth.jwt() ->> 'role') = 'admin_global')
-  WITH CHECK ((auth.jwt() ->> 'role') = 'admin_global');
+  USING  ((auth.jwt() ->> 'user_role') = 'admin_global')
+  WITH CHECK ((auth.jwt() ->> 'user_role') = 'admin_global');
 
 -- =============================================================================
 -- RATE_LIMITS — géré par Edge Function en service_role
@@ -590,7 +590,7 @@ CREATE OR REPLACE FUNCTION fn_write_audit_log(
 ) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   -- Vérifier que le caller écrit bien pour lui-même (pas d'usurpation)
-  IF p_user_id <> auth.uid() AND (auth.jwt() ->> 'role') <> 'admin_global' THEN
+  IF p_user_id <> auth.uid() AND (auth.jwt() ->> 'user_role') <> 'admin_global' THEN
     RAISE EXCEPTION 'Permission denied: cannot write audit entry for another user.';
   END IF;
 
