@@ -1326,6 +1326,14 @@ export type Database = {
           score_par_dimension: Json
         }[]
       }
+      fn_notifier_validation_essentiels_ko: {
+        Args: {
+          p_essentiels_ko: string[]
+          p_eval_id: string
+          p_org_name?: string
+        }
+        Returns: string
+      }
       fn_write_audit_log: {
         Args: {
           p_action: string
