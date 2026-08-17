@@ -27,9 +27,9 @@ describe('calculerComparaisonFaritany', () => {
     expect(a.code).toBe('ANT-01');
   });
 
-  it('idGlobal = moyenne des IDs par dimension (mean-of-means), PAS moyenne plate des criteres', () => {
-    // D01 : 1 crit=3 -> 100 ; D02 : 3 crits=0 -> 0.
-    // mean-of-means = (100+0)/2 = 50 ; moyenne plate serait (3+0+0+0)/(4*3)*100 = 25.
+  it('idGlobal = moyenne SUR LES DIMENSIONS, PAS moyenne plate des criteres', () => {
+    // D01 : 1 crit=3 -> 100 ; D02 : 3 crits=0 -> 0 (dimension évaluée, score 0).
+    // moyenne par dimension = (100+0)/2 = 50 ; moyenne plate serait (3+0+0+0)/(4*3)*100 = 25.
     const r = ref([dim('D01', [crit('F1')], 1), dim('D02', [crit('G1'), crit('G2'), crit('G3')], 2)]);
     const res = calculerComparaisonFaritany(r, [{ orgId: 'A', scores: { F1: 3, G1: 0, G2: 0, G3: 0 } }], orgInfo);
     const a = res.find((l) => l.asnId === 'A')!;
@@ -45,12 +45,13 @@ describe('calculerComparaisonFaritany', () => {
     expect(res.find((l) => l.asnId === 'A')!.scoreParDimension['D01']).toBe(100);
   });
 
-  it('dimension sans critere scoré -> 0 en cellule mais EXCLUE de la moyenne globale', () => {
+  it('dimension NON évaluée -> 0 en cellule ET comptée 0 dans la moyenne globale', () => {
     const r = ref([dim('D01', [crit('F1')], 1), dim('D02', [crit('G1')], 2)]);
     const res = calculerComparaisonFaritany(r, [{ orgId: 'A', scores: { F1: 3 } }], orgInfo);
     const a = res.find((l) => l.asnId === 'A')!;
     expect(a.scoreParDimension['D02']).toBe(0);
-    expect(a.scoreGlobal).toBe(100); // = D01 seul, PAS (100+0)/2 = 50
+    // D02 non évaluée tire le global vers le bas : (100 + 0) / 2 = 50 (déploiement incomplet).
+    expect(a.scoreGlobal).toBe(50);
   });
 
   it('ligne exclue si TOUTES les dimensions sont nulles', () => {

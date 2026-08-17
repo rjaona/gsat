@@ -22,19 +22,19 @@ La page **Indice de Déploiement** (`/dashboard/indice`) n'affiche qu'une **tabl
 `getIndiceDeploiement()` calcule déjà les données par-Faritany (`evalsParticipantes`) puis ne renvoie que l'agrégat national. On expose le par-Faritany sans re-fetch :
 
 - **`src/services/indice/calculerComparaisonFaritany.ts`** (pur) — lentille ID via `scoreSurCriteres` (`@/services/scoring`, exclut **absent ET N/A**, rend **déjà 0–100**) :
-  - `idParDimension[dim.code]` = `scoreSurCriteres(scores, dim.criteres.filter(actif))`.
-  - `idGlobal` = **moyenne des `idParDimension` non-nuls** (mean-of-means) → cohérent intra-ligne avec les cellules dimension, aligné sur la sémantique de `calculerScoreGlobal`.
-  - Dimension nulle → `0` ; toutes nulles → ligne exclue.
+  - `idParDimension[dim.code]` = `scoreSurCriteres(scores, dim.criteres.filter(actif))` — DANS une dimension, absent+N/A exclus.
+  - `idGlobal` = **moyenne sur TOUTES les dimensions**, une dimension non évaluée comptant **0** (décision produit) → global cohérent avec les cellules affichées (`0%`), une dimension non couverte tire l'indice vers le bas (déploiement incomplet).
+  - Toutes dimensions nulles (0 signal) → ligne exclue.
   - Retourne `LigneAsn[]` (type existant).
-- **`indiceService`** : loader interne partagé `chargerDonneesIndice()` (ajoute `nom, code` au select organisations) ; `getIndiceDeploiement()` inchangé côté API ; nouvelle `getIndiceComplet(): { national, faritany }` (un seul chargement).
+- **`indiceService`** : loader interne partagé `chargerDonneesIndice()` (ajoute `nom, code` au select organisations) ; `getIndiceDeploiement()` inchangé côté API ; nouvelle `getIndiceComplet(): { national, faritany, dimensionCodes, niveauLabel }` (un seul chargement).
 
-**Divergence assumée** : l'ID (absent exclu) diffère par design du `score_global` GSAT (absent = 0). C'est la raison d'être de la lentille ID.
+**Sémantique** : dans une dimension, un critère absent est exclu (lentille ID) ; mais une dimension entièrement non couverte compte 0 dans le global. Distinct du `score_global` GSAT (qui compte aussi les critères absents = 0 au sein des dimensions).
 
 ### UI (réutilisation)
 
-`AsnComparisonTable` (déjà 0–100 : buckets 75/50/25, rendu `%`) est réutilisé **sans modification**, alimenté par les lignes ID. Groupage via `grouperAsnParProvince`/`seuilQuartileBas`/`PROVINCES`. Store : `faritany: LigneAsn[]`. `niveauLabel` via `getLibelleNiveauLocal`. i18n fr/en/mg sous `pages.indice`.
+`AsnComparisonTable` (déjà 0–100 : buckets 75/50/25, rendu `%`) est réutilisé, alimenté par les lignes ID. Groupage via `grouperAsnParProvince`/`seuilQuartileBas`/`PROVINCES`. Store : `faritany: LigneAsn[]`. `niveauLabel` via `getLibelleNiveauLocal`. i18n fr/en/mg sous `pages.indice`.
 
-> Effet de bord constaté : `DashboardOsnPage` alimente le même composant en 0–3 (bug d'échelle latent, hors périmètre — signalé, non corrigé ici).
+> Échelle confirmée par le trigger `fn_recalculate_scores` (`supabase/trigger_on_score_write.sql`) : `score_dimension = round((sum/(n*3))*100)`, `score_global = round(mean(dims))` → `dashboard_stats` est **déjà en 0–100**. `DashboardOsnPage` alimente donc `AsnComparisonTable` en 0–100 comme nous : **pas de bug d'échelle**. (Une note antérieure évoquait à tort du 0–3 côté OSN — corrigée.)
 
 ### Export PDF
 
