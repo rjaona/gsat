@@ -347,8 +347,8 @@ BEGIN
     SELECT id INTO v_osn FROM organisations WHERE type='OSN' ORDER BY created_at LIMIT 1;
     INSERT INTO auth.users (id, email) VALUES ('d3000000-0000-4000-8000-00000000ad01','admin.local@tem.mg')
       ON CONFLICT (id) DO NOTHING;
-    INSERT INTO users (id, org_id, email, role)
-      VALUES ('d3000000-0000-4000-8000-00000000ad01', v_osn, 'admin.local@tem.mg', 'admin_global')
+    INSERT INTO users (id, org_id, org_type, nom, prenom, email, role)
+      VALUES ('d3000000-0000-4000-8000-00000000ad01', v_osn, 'OSN', 'Admin', 'Local', 'admin.local@tem.mg', 'admin_global')
       ON CONFLICT (id) DO NOTHING;
   END IF;
 END \$\$;"
@@ -382,8 +382,9 @@ Expected: `refver=1, dims=10, crit=105, camp=1, ev=1`.
 Run (insère un score de test sur le code national `101`, puis vérifie qu'il est visible côté « note nationale » — l'OSN est bien le parent des Faritany) :
 ```bash
 psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -c "
-INSERT INTO evaluation_scores (eval_id, critere_code, note)
-VALUES ('d3000000-0000-4000-8000-0000000e0001','101',3)
+INSERT INTO evaluation_scores (eval_id, critere_code, note, updated_by)
+VALUES ('d3000000-0000-4000-8000-0000000e0001','101',3,
+        (SELECT id FROM users WHERE role='admin_global' ORDER BY created_at LIMIT 1))
 ON CONFLICT (eval_id, critere_code) DO UPDATE SET note=3;
 SELECT es.critere_code, es.note
 FROM evaluation_scores es
