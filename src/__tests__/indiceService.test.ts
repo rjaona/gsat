@@ -42,7 +42,7 @@ vi.mock('@/services/supabase', () => {
   return { supabase: { from } };
 });
 
-import { getIndiceDeploiement, getIndiceComplet } from '@/services/indiceService';
+import { getIndiceComplet } from '@/services/indiceService';
 
 beforeEach(() => {
   db.tables = {
@@ -76,9 +76,9 @@ beforeEach(() => {
   };
 });
 
-describe('getIndiceDeploiement', () => {
+describe('getIndiceComplet — table nationale', () => {
   it('agrège toutes les campagnes far, dédup dernière éval/Faritany, préfère la note nationale validée', async () => {
-    const res = await getIndiceDeploiement();
+    const { national: res } = await getIndiceComplet();
     const c401 = res.find((r) => r.code === '401')!;
     // dédup A → eA_new (100), pas eA_old (0) ; C sans score exclue (poids 100 ne dilue pas)
     // ID = (100*3 + 0*1) / (3+1) = 75
@@ -91,7 +91,7 @@ describe('getIndiceDeploiement', () => {
 
   it('rend ID-only (écart indéfini) sans campagne nationale v3_0', async () => {
     db.tables['campagnes'] = [{ id: 'campF1', referentiel_version: 'far_v1_0' }];
-    const res = await getIndiceDeploiement();
+    const { national: res } = await getIndiceComplet();
     const c401 = res.find((r) => r.code === '401');
     // A (eA_old=0), B (0) dans campF1 → ID = 0 ; aucune note nationale
     expect(c401?.noteNationale).toBeNull();
@@ -116,7 +116,7 @@ describe('getIndiceDeploiement', () => {
       { eval_id: 'nOld', critere_code: '401', note: 1 },
       { eval_id: 'nNew', critere_code: '401', note: 3 },
     ];
-    const res = await getIndiceDeploiement();
+    const { national: res } = await getIndiceComplet();
     const c401 = res.find((r) => r.code === '401')!;
     // ID = (100*3 + 0*1) / (3+1) = 75 (même que le premier test)
     expect(c401.id).toBe(75);
@@ -142,7 +142,7 @@ describe('getIndiceDeploiement', () => {
       { eval_id: 'eB',     critere_code: 'F1', note: 0 }, { eval_id: 'eB',     critere_code: 'F2', note: 0 },
       { eval_id: 'nValNull', critere_code: '401', note: null },
     ];
-    const res = await getIndiceDeploiement();
+    const { national: res } = await getIndiceComplet();
     const c401 = res.find((r) => r.code === '401')!;
     // ID = (100*3 + 0*1) / (3+1) = 75 (même que les autres tests)
     expect(c401.id).toBe(75);
@@ -171,7 +171,7 @@ describe('getIndiceDeploiement', () => {
       { eval_id: 'nOSN',     critere_code: '401', note: 3 },
       { eval_id: 'nForeign', critere_code: '401', note: 0 },
     ];
-    const res = await getIndiceDeploiement();
+    const { national: res } = await getIndiceComplet();
     const c401 = res.find((r) => r.code === '401')!;
     // ID = (100*3 + 0*1) / (3+1) = 75 (même que les autres tests)
     expect(c401.id).toBe(75);
@@ -187,7 +187,7 @@ describe('getIndiceComplet', () => {
     const { national, faritany, dimensionCodes, niveauLabel } = await getIndiceComplet();
     expect(dimensionCodes).toEqual(['D01']);
     expect(niveauLabel).toBe('Faritany');
-    // National identique à getIndiceDeploiement (même loader).
+    // National identique à la table nationale (même loader).
     expect(national.find((r) => r.code === '401')!.id).toBe(75);
     // Faritany : A (eA_new F1=F2=3 → 100) et B (0) ; C sans score exclu.
     expect(faritany).toHaveLength(2);

@@ -30,10 +30,6 @@ export interface IndiceReportInput {
   date?: string | undefined
 }
 
-function finalY(doc: jsPDF, fallback: number): number {
-  return (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? fallback
-}
-
 export function generateIndiceReport(input: IndiceReportInput): jsPDF {
   const { national, faritany, dimensionCodes } = input
   const niveauLabel = input.niveauLabel ?? 'Faritany'
@@ -124,9 +120,6 @@ export function generateIndiceReport(input: IndiceReportInput): jsPDF {
     bodyStyles: { ...pdfTableStyles.bodyStyles, fontSize: pdfFontSize.label },
     columnStyles: { 0: { halign: 'left' } },
   })
-
-  // (finalY conservé pour d'éventuelles sections futures)
-  void finalY(doc, 22)
 
   return doc
 }

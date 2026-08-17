@@ -135,17 +135,6 @@ async function chargerDonneesIndice(): Promise<DonneesIndice | null> {
 }
 
 /**
- * Indice de Déploiement (§6) — table nationale par critère. Réservé côté route/UI
- * à admin_global | responsable_osn | responsable_region. Ne modifie jamais le
- * score GSAT.
- */
-export async function getIndiceDeploiement(): Promise<IndiceCritereNational[]> {
-  const d = await chargerDonneesIndice();
-  if (!d) return [];
-  return calculerIndiceDeploiement(d.refFar, d.evalsParticipantes, d.poids, d.notesNationales);
-}
-
-/**
  * Indice de Déploiement complet : table nationale par critère + comparaison par
  * Faritany (lentille ID), dérivées du MÊME jeu d'évals (un seul chargement) pour
  * rester cohérentes. Lecture seule, sous le JWT utilisateur.
