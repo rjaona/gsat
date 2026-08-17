@@ -536,9 +536,6 @@ export interface AutoValiderOptions {
   evalOrgId: string;
   /** system_config.revue_delai_jours de l'OSN parente. 60 par défaut. */
   delaiRevueJours?: number | undefined;
-  /** Responsable national à prévenir. */
-  recipientId?: string | undefined;
-  orgName?: string | undefined;
 }
 
 /**
@@ -577,15 +574,17 @@ export async function autoValiderEvaluation(id: string, o: AutoValiderOptions): 
   if (error) throw error;
 
   // Valider avec des essentiels non conformes est permis — jamais silencieux.
-  if (o.essentielsKO.length > 0 && o.recipientId) {
-    void createNotification({
-      type: 'alerte_critique',
-      title: 'Évaluation validée avec des critères essentiels non conformes',
-      message: `${o.orgName ?? 'Un Faritany'} a validé son évaluation avec `
-             + `${o.essentielsKO.length} critère(s) essentiel(s) à 0 : ${o.essentielsKO.join(', ')}.`,
-      recipientId: o.recipientId,
-      resourceType: 'evaluation', resourceId: id,
-    }).catch(() => {});
+  // La notification part par RPC SECURITY DEFINER : un responsable_asn ne peut
+  // ni lire le destinataire (users_select = own-org) ni insérer une notif
+  // (notif_insert l'exclut). La RPC résout le responsable_osn parent → fallback
+  // admin_global, et insère côté serveur. Best-effort : n'échoue pas la validation.
+  if (o.essentielsKO.length > 0) {
+    void supabase
+      .rpc('fn_notifier_validation_essentiels_ko', {
+        p_eval_id:       id,
+        p_essentiels_ko: o.essentielsKO,
+      })
+      .then(undefined, () => {});
   }
 }
 

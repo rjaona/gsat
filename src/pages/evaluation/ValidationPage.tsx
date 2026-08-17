@@ -233,9 +233,10 @@ export function ValidationPage() {
         role,
         userOrgId: orgId,
         evalOrgId: evaluation.orgId,
-        // TODO(P5) : recipientId = responsable national/OSN pour la notification
-        // « validée avec essentiels KO » (CLAUDE.md). Non résolu ici → sans
-        // destinataire, autoValiderEvaluation n'émet pas la notification.
+        // La notif « validée avec essentiels KO » est émise côté serveur par la
+        // RPC fn_notifier_validation_essentiels_ko (destinataire = responsable_osn
+        // parent → admin_global ; nom d'org résolu côté serveur), déclenchée par
+        // autoValiderEvaluation.
       })
       await writeAuditEntry({
         userId: user.id,
