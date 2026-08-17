@@ -9,7 +9,17 @@ vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }
 vi.mock('@/stores/indiceStore', () => ({ useIndiceStore: () => store.current }));
 
 function baseState(resultats: IndiceCritereNational[], over: Record<string, unknown> = {}) {
-  return { resultats, loading: false, error: null, load: vi.fn(), reset: vi.fn(), ...over };
+  return {
+    resultats,
+    faritany: [],
+    dimensionCodes: [],
+    niveauLabel: null,
+    loading: false,
+    error: null,
+    load: vi.fn(),
+    reset: vi.fn(),
+    ...over,
+  };
 }
 afterEach(cleanup);
 
@@ -37,5 +47,22 @@ describe('IndiceDeploiementPage', () => {
     store.current = baseState([]);
     render(<IndiceDeploiementPage />);
     expect(screen.getByText('pages.indice.vide')).toBeTruthy();
+  });
+
+  it('affiche la comparaison par province groupée quand il y a des Faritany', () => {
+    store.current = baseState([], {
+      faritany: [
+        { asnId: 'A', nom: 'Antananarivo I', scoreGlobal: 80, scoreParDimension: { D01: 80 }, code: 'ANT-01' },
+        { asnId: 'B', nom: 'Fianarantsoa II', scoreGlobal: 30, scoreParDimension: { D01: 30 }, code: 'FIA-07' },
+      ],
+      dimensionCodes: ['D01'],
+      niveauLabel: 'Faritany',
+    });
+    render(<IndiceDeploiementPage />);
+    expect(screen.getByText('pages.indice.comparaison.titre')).toBeTruthy();
+    // Libellé de niveau (jamais « ASN » en dur) rendu en en-tête de colonne.
+    expect(screen.getByText('Faritany')).toBeTruthy();
+    // Le Faritany du quartile bas est visible (son groupe province s'ouvre par défaut).
+    expect(screen.getByText('Fianarantsoa II')).toBeTruthy();
   });
 });

@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useIndiceStore } from '@/stores/indiceStore';
+import { AsnComparisonTable } from '@/components/dashboard/osn/AsnComparisonTable';
+import { ExportPdfButton } from '@/components/shared/ExportPdfButton';
+import { generateIndiceReport } from '@/services/pdf/indiceReport';
 import type { IndiceCritereNational } from '@/services/indice/calculerIndiceDeploiement';
 
 function badgeClass(interp: IndiceCritereNational['interpretation']): string {
@@ -15,14 +18,29 @@ function badgeClass(interp: IndiceCritereNational['interpretation']): string {
 
 export function IndiceDeploiementPage() {
   const { t } = useTranslation();
-  const { resultats, loading, error, load } = useIndiceStore();
+  const { resultats, faritany, dimensionCodes, niveauLabel, loading, error, load } = useIndiceStore();
 
   useEffect(() => { void load(); }, [load]);
 
+  const hasData = resultats.length > 0 || faritany.length > 0;
+  const handleExport = async () => {
+    generateIndiceReport({
+      national: resultats,
+      faritany,
+      dimensionCodes,
+      niveauLabel: niveauLabel ?? undefined,
+    }).save(`indice_deploiement_${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   return (
     <div className="p-6">
-      <h1 className="text-xl font-semibold">{t('pages.indice.titre')}</h1>
-      <p className="mt-1 text-sm text-slate-500">{t('pages.indice.sousTitre')}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold">{t('pages.indice.titre')}</h1>
+          <p className="mt-1 text-sm text-slate-500">{t('pages.indice.sousTitre')}</p>
+        </div>
+        {hasData && <ExportPdfButton onExport={handleExport} compact />}
+      </div>
 
       {error && <p className="mt-4 text-sm text-rose-600">{error}</p>}
       {loading && <p className="mt-4 text-sm text-slate-500">{t('pages.indice.chargement')}</p>}
@@ -60,6 +78,20 @@ export function IndiceDeploiementPage() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {faritany.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-lg font-semibold">{t('pages.indice.comparaison.titre')}</h2>
+          <p className="mt-1 text-sm text-slate-500">{t('pages.indice.comparaison.sousTitre')}</p>
+          <div className="mt-4">
+            <AsnComparisonTable
+              rows={faritany}
+              dimensionCodes={dimensionCodes}
+              niveauLabel={niveauLabel ?? undefined}
+            />
+          </div>
+        </section>
       )}
     </div>
   );
