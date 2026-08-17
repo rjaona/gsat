@@ -14,6 +14,10 @@ vi.mock('@/services/referentielService', () => ({
   getReferentiel: vi.fn(async (v: string) => (v === 'far_v1_0' ? refFar : null)),
 }));
 
+vi.mock('@/services/organisationService', () => ({
+  getLibelleNiveauLocal: vi.fn(async () => 'Faritany'),
+}));
+
 // Builder mock : select/eq/in/order (tri réel) + thenable (list). Pas de single/limit.
 vi.mock('@/services/supabase', () => {
   function from(table: string) {
@@ -38,7 +42,7 @@ vi.mock('@/services/supabase', () => {
   return { supabase: { from } };
 });
 
-import { getIndiceDeploiement } from '@/services/indiceService';
+import { getIndiceDeploiement, getIndiceComplet } from '@/services/indiceService';
 
 beforeEach(() => {
   db.tables = {
@@ -65,9 +69,9 @@ beforeEach(() => {
       { eval_id: 'nCur', critere_code: '401', note: 1 },
     ],
     organisations: [
-      { id: 'A', poids: 3, parent_id: 'OSN' },
-      { id: 'B', poids: 1, parent_id: 'OSN' },
-      { id: 'C', poids: 100, parent_id: 'OSN' },
+      { id: 'A', poids: 3, parent_id: 'OSN', nom: 'Antananarivo I', code: 'ANT-01' },
+      { id: 'B', poids: 1, parent_id: 'OSN', nom: 'Fianarantsoa', code: 'FIA-07' },
+      { id: 'C', poids: 100, parent_id: 'OSN', nom: 'Toamasina', code: 'TOA-06' },
     ],
   };
 });
@@ -175,5 +179,23 @@ describe('getIndiceDeploiement', () => {
     expect(c401.noteNationale).toBe(3);
     // écart = 3*100/3 − 75 = 25
     expect(c401.ecart).toBe(25);
+  });
+});
+
+describe('getIndiceComplet', () => {
+  it('rend national + comparaison par Faritany depuis le MÊME chargement', async () => {
+    const { national, faritany, dimensionCodes, niveauLabel } = await getIndiceComplet();
+    expect(dimensionCodes).toEqual(['D01']);
+    expect(niveauLabel).toBe('Faritany');
+    // National identique à getIndiceDeploiement (même loader).
+    expect(national.find((r) => r.code === '401')!.id).toBe(75);
+    // Faritany : A (eA_new F1=F2=3 → 100) et B (0) ; C sans score exclu.
+    expect(faritany).toHaveLength(2);
+    const a = faritany.find((l) => l.asnId === 'A')!;
+    expect(a.scoreGlobal).toBe(100);
+    expect(a.nom).toBe('Antananarivo I');
+    expect(a.code).toBe('ANT-01');
+    expect(faritany.find((l) => l.asnId === 'B')!.scoreGlobal).toBe(0);
+    expect(faritany.find((l) => l.asnId === 'C')).toBeUndefined();
   });
 });

@@ -1,37 +1,52 @@
 import { supabase } from './supabase';
 import { getReferentiel } from './referentielService';
+import { getLibelleNiveauLocal } from './organisationService';
 import {
   calculerIndiceDeploiement,
   type EvalFaritanyParticipante,
   type IndiceCritereNational,
 } from './indice/calculerIndiceDeploiement';
+import {
+  calculerComparaisonFaritany,
+  type OrgInfoFaritany,
+} from './indice/calculerComparaisonFaritany';
+import type { LigneAsn } from '@/utils/asnTableau';
 import type { ScoreMap } from './scoring';
+import type { Referentiel } from '@/types';
 
 const VERSION_FAR = 'far_v1_0';
 const VERSION_NAT = 'v3_0';
 
 type Row = Record<string, unknown>;
 
+interface DonneesIndice {
+  refFar: Referentiel;
+  evalsParticipantes: EvalFaritanyParticipante[];
+  poids: Record<string, number>;
+  notesNationales: Record<string, number | null>;
+  orgInfo: Record<string, OrgInfoFaritany>;
+  osnOrgIds: string[];
+}
+
 /**
- * Indice de Déploiement (§6) — lecture seule, sous le JWT de l'utilisateur.
- * Réservé côté route/UI à admin_global | responsable_osn | responsable_region.
- * Ne modifie jamais le score GSAT.
+ * Charge, une seule fois, tout le nécessaire à l'Indice de Déploiement (§6) —
+ * côté Faritany (toutes campagnes far_v1_0, dédup dernière éval par org) et côté
+ * national (auto-éval OSN v3_0, validée préférée). Lecture seule, sous le JWT de
+ * l'utilisateur. Rend `null` s'il n'y a aucune donnée far exploitable.
  *
  * ⚠️ Schéma : `evaluations` n'a PAS de `referentiel_version` — la version vit sur
  * `campagnes`. On sélectionne donc toujours par campagne.
- * Côté far : TOUTES les campagnes far_v1_0 (ouverture par vagues), dédup dernière
- * éval par Faritany. Côté national : auto-éval OSN v3_0 (statut validée préféré).
  */
-export async function getIndiceDeploiement(): Promise<IndiceCritereNational[]> {
+async function chargerDonneesIndice(): Promise<DonneesIndice | null> {
   const refFar = await getReferentiel(VERSION_FAR);
-  if (!refFar) return [];
+  if (!refFar) return null;
 
   // ── Côté Faritany : toutes les campagnes far_v1_0 ──
   const { data: farCamps, error: eFC } = await supabase
     .from('campagnes').select('id').eq('referentiel_version', VERSION_FAR);
   if (eFC) throw eFC;
   const farCampIds = (farCamps ?? []).map((c) => (c as Row)['id'] as string);
-  if (farCampIds.length === 0) return [];
+  if (farCampIds.length === 0) return null;
 
   const { data: farEvalsRaw, error: eEv } = await supabase
     .from('evaluations').select('id, org_id, created_at')
@@ -39,7 +54,7 @@ export async function getIndiceDeploiement(): Promise<IndiceCritereNational[]> {
     .order('created_at', { ascending: false });
   if (eEv) throw eEv;
   const farEvals = (farEvalsRaw ?? []) as Row[];
-  if (farEvals.length === 0) return [];
+  if (farEvals.length === 0) return null;
 
   // Dédup : dernière éval par org (liste déjà triée created_at desc → 1er vu = plus récent).
   const latestByOrg = new Map<string, string>(); // org_id -> eval_id
@@ -51,10 +66,18 @@ export async function getIndiceDeploiement(): Promise<IndiceCritereNational[]> {
   const orgIds = [...latestByOrg.keys()];
 
   const { data: orgsRaw, error: eOrg } = await supabase
-    .from('organisations').select('id, poids, parent_id').in('id', orgIds);
+    .from('organisations').select('id, poids, parent_id, nom, code').in('id', orgIds);
   if (eOrg) throw eOrg;
   const poids: Record<string, number> = {};
-  for (const o of (orgsRaw ?? []) as Row[]) poids[o['id'] as string] = (o['poids'] as number | null) ?? 1;
+  const orgInfo: Record<string, OrgInfoFaritany> = {};
+  for (const o of (orgsRaw ?? []) as Row[]) {
+    const id = o['id'] as string;
+    poids[id] = (o['poids'] as number | null) ?? 1;
+    orgInfo[id] = {
+      nom: (o['nom'] as string | null) ?? id,
+      code: (o['code'] as string | null) ?? undefined,
+    };
+  }
   // OSN(s) = parent(s) distinct(s) et non nul(s) des Faritany participantes.
   // Le référentiel v3_0 est mondial (tous les OSN) → l'éval nationale DOIT être
   // scopée à l'OSN propriétaire des Faritany, sinon on peut piocher l'éval
@@ -108,5 +131,40 @@ export async function getIndiceDeploiement(): Promise<IndiceCritereNational[]> {
     }
   }
 
-  return calculerIndiceDeploiement(refFar, evalsParticipantes, poids, notesNationales);
+  return { refFar, evalsParticipantes, poids, notesNationales, orgInfo, osnOrgIds };
+}
+
+/**
+ * Indice de Déploiement (§6) — table nationale par critère. Réservé côté route/UI
+ * à admin_global | responsable_osn | responsable_region. Ne modifie jamais le
+ * score GSAT.
+ */
+export async function getIndiceDeploiement(): Promise<IndiceCritereNational[]> {
+  const d = await chargerDonneesIndice();
+  if (!d) return [];
+  return calculerIndiceDeploiement(d.refFar, d.evalsParticipantes, d.poids, d.notesNationales);
+}
+
+/**
+ * Indice de Déploiement complet : table nationale par critère + comparaison par
+ * Faritany (lentille ID), dérivées du MÊME jeu d'évals (un seul chargement) pour
+ * rester cohérentes. Lecture seule, sous le JWT utilisateur.
+ */
+export async function getIndiceComplet(): Promise<{
+  national: IndiceCritereNational[];
+  faritany: LigneAsn[];
+  dimensionCodes: string[];
+  niveauLabel: string | null;
+}> {
+  const d = await chargerDonneesIndice();
+  if (!d) return { national: [], faritany: [], dimensionCodes: [], niveauLabel: null };
+  // Libellé du niveau local (ex. « Faritany ») depuis system_config de l'OSN
+  // parente — jamais codé en dur. Multi-OSN (admin) → premier disponible.
+  const niveauLabel = d.osnOrgIds[0] ? await getLibelleNiveauLocal(d.osnOrgIds[0]) : null;
+  return {
+    national: calculerIndiceDeploiement(d.refFar, d.evalsParticipantes, d.poids, d.notesNationales),
+    faritany: calculerComparaisonFaritany(d.refFar, d.evalsParticipantes, d.orgInfo),
+    dimensionCodes: d.refFar.dimensions.map((dim) => dim.code),
+    niveauLabel,
+  };
 }
