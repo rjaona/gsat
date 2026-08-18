@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { login } from '@/services/authService';
 
@@ -505,6 +505,13 @@ export function LoginPage() {
               )}
             </button>
           </form>
+
+          <Link
+            to="/forgot-password"
+            style={{ display: 'block', marginTop: '16px', textAlign: 'center', fontSize: '14px', color: WOSM_PURPLE }}
+          >
+            {t('auth.forgotLink')}
+          </Link>
 
           {/* Footer form */}
           <div
