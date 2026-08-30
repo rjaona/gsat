@@ -19,9 +19,18 @@
 --      sur son petit-enfant), calquee EXACTEMENT sur evals_update_revue (qui, lui,
 --      ne couvre que statut='validee'). Sans cette policy, la transition
 --      soumise -> validee/en_cours du parcours "evaluation accompagnee" est
---      bloquee (echec RLS silencieux). Les cas own-org (responsable_asn,
+--      bloquee au niveau RLS (echec silencieux). Les cas own-org (responsable_asn,
 --      evaluateur, responsable_osn, utilisateur_asn sur LEUR org) restent couverts
 --      par evals_update (branche 2) et evals_update_resp_asn.
+--
+-- CAVEAT (audit go-live, constat separe) : cette policy retablit l'AUTORISATION
+-- RLS. La branche "approuver" (soumise -> validee) reste, en plus, gatee par le
+-- trigger fn_garde_auto_validation (migration 20260804) qui exige un PV comite
+-- sur toute transition -> validee — regle concue pour l'auto-validation Faritany
+-- (OLD='en_cours'), qui capture par effet de bord la validation hierarchique OSN
+-- (OLD='soumise', sans PV). La branche "renvoyer" (soumise -> en_cours) fonctionne.
+-- Correctif du trigger = decision domaine (la validation OSN requiert-elle un PV ?)
+-- traitee hors de ce fix de securite. Voir AUDIT_GO_LIVE.md.
 --
 -- IDEMPOTENT : ALTER POLICY + DROP POLICY IF EXISTS/CREATE, DDL pur, rejouable.
 -- =============================================================================
