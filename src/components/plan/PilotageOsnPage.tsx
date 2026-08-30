@@ -8,8 +8,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import { listOrganisations } from '@/services/organisationService';
-import { listPlansByOrg, listActions } from '@/services/planActionService';
-import type { Organisation, PlanAction, Action, ActionStatut } from '@/types';
+import { listActionAggByOrgIds } from '@/services/planActionService';
+import type { Organisation } from '@/types';
 
 function Icon({ name, size = 20 }: { name: string; size?: number }) {
   return (
@@ -86,56 +86,32 @@ export function PilotageOsnPage() {
         const allAsn = await listOrganisations('ASN');
         const childAsn = allAsn.filter(org => org.parentId === orgId);
 
-        // 2. For each ASN, load plan(s) and their actions
-        const summaries: AsnPlanSummary[] = [];
+        // 2. Audit M7 : une seule requête batchée (plans + actions jointes) au
+        // lieu du N+1 (33 ASN × plans × listActions séquentiel).
+        const aggByOrg = await listActionAggByOrgIds(childAsn.map(a => a.id));
 
-        await Promise.all(
-          childAsn.map(async (asn: Organisation) => {
-            const plans: PlanAction[] = await listPlansByOrg(asn.id);
-            // Aggregate actions across all plans for this ASN
-            let totalActions = 0;
-            let doneActions = 0;
-            let enCoursActions = 0;
-            let bloqueActions = 0;
-            let latestUpdate: Date | null = null;
-
-            for (const plan of plans) {
-              const actions: Action[] = await listActions(plan.id);
-              totalActions += actions.length;
-              for (const action of actions) {
-                const statut: ActionStatut = action.statut;
-                if (statut === 'termine') doneActions++;
-                if (statut === 'en_cours') enCoursActions++;
-                if (statut === 'bloque') bloqueActions++;
-
-                const actionDate = action.createdAt
-                  ? new Date(action.createdAt)
-                  : null;
-                if (actionDate && (!latestUpdate || actionDate > latestUpdate)) {
-                  latestUpdate = actionDate;
-                }
-              }
-            }
-
-            const score = totalActions > 0
-              ? Math.round((doneActions / totalActions) * 100)
-              : 0;
-
-            summaries.push({
-              id: asn.id,
-              orgId: asn.id,
-              name: asn.nom,
-              region: regionLabel(asn.regionCode),
-              actions_total: totalActions,
-              actions_done: doneActions,
-              actions_en_cours: enCoursActions,
-              actions_bloque: bloqueActions,
-              score,
-              conformity: score >= CONFORMITY_THRESHOLD ? 'conforme' : 'non-conforme',
-              last_update: latestUpdate ? formatDate(latestUpdate) : '—',
-            });
-          }),
-        );
+        const summaries: AsnPlanSummary[] = childAsn.map((asn: Organisation) => {
+          const agg = aggByOrg[asn.id] ?? {
+            actionsTotal: 0, actionsDone: 0, actionsEnCours: 0, actionsBloque: 0,
+            latestUpdate: null,
+          };
+          const score = agg.actionsTotal > 0
+            ? Math.round((agg.actionsDone / agg.actionsTotal) * 100)
+            : 0;
+          return {
+            id: asn.id,
+            orgId: asn.id,
+            name: asn.nom,
+            region: regionLabel(asn.regionCode),
+            actions_total: agg.actionsTotal,
+            actions_done: agg.actionsDone,
+            actions_en_cours: agg.actionsEnCours,
+            actions_bloque: agg.actionsBloque,
+            score,
+            conformity: score >= CONFORMITY_THRESHOLD ? 'conforme' : 'non-conforme',
+            last_update: agg.latestUpdate ? formatDate(new Date(agg.latestUpdate)) : '—',
+          };
+        });
 
         if (!cancelled) {
           setAsnSummaries(summaries);

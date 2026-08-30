@@ -295,6 +295,52 @@ export interface OrgPlanStats {
   actionsDone:  number;
 }
 
+export interface OrgActionAgg {
+  actionsTotal: number;
+  actionsDone: number;
+  actionsEnCours: number;
+  actionsBloque: number;
+  latestUpdate: string | null; // ISO8601 du plus récent created_at d'action
+}
+
+/**
+ * Audit M7 : agrège en UNE requête (plans + actions jointes) les compteurs
+ * d'actions par org, sur TOUS les plans de l'org — remplace le N+1 de
+ * PilotageOsnPage (33 ASN × plans × listActions séquentiel).
+ */
+export async function listActionAggByOrgIds(
+  orgIds: string[],
+): Promise<Record<string, OrgActionAgg>> {
+  if (orgIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from('plans_action')
+    .select('org_id, plan_actions(statut, created_at)')
+    .in('org_id', orgIds);
+  if (error) throw error;
+
+  const empty = (): OrgActionAgg => ({
+    actionsTotal: 0, actionsDone: 0, actionsEnCours: 0, actionsBloque: 0, latestUpdate: null,
+  });
+  const byOrg: Record<string, OrgActionAgg> = {};
+  for (const id of orgIds) byOrg[id] = empty();
+
+  for (const plan of data ?? []) {
+    const orgId = plan['org_id'] as string;
+    const agg = byOrg[orgId] ?? (byOrg[orgId] = empty());
+    const actions = (plan['plan_actions'] as unknown as { statut: string; created_at: string | null }[]) ?? [];
+    for (const a of actions) {
+      agg.actionsTotal++;
+      if (a.statut === 'termine') agg.actionsDone++;
+      else if (a.statut === 'en_cours') agg.actionsEnCours++;
+      else if (a.statut === 'bloque') agg.actionsBloque++;
+      if (a.created_at && (agg.latestUpdate === null || a.created_at > agg.latestUpdate)) {
+        agg.latestUpdate = a.created_at;
+      }
+    }
+  }
+  return byOrg;
+}
+
 export async function listPlanStatsByOrgIds(
   orgIds: string[],
 ): Promise<Record<string, OrgPlanStats>> {

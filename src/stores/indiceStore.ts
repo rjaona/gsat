@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { getIndiceComplet } from '@/services/indiceService';
+import { useAuthStore } from '@/stores/authStore';
 import type { IndiceCritereNational } from '@/services/indice/calculerIndiceDeploiement';
 import type { LigneAsn } from '@/utils/asnTableau';
+
+const INDICE_TTL_MS = 60_000; // fenêtre de cache entre deux montages de la page
 
 /**
  * Indice de Déploiement (§6) — store fin : délègue tout calcul au service
@@ -15,26 +18,42 @@ interface IndiceState {
   niveauLabel: string | null;
   loading: boolean;
   error: string | null;
-  load: () => Promise<void>;
+  loadedAt: number | null;
+  loadedForUser: string | null; // identité de session pour laquelle le cache est valide
+  load: (force?: boolean) => Promise<void>;
   reset: () => void;
 }
 
-export const useIndiceStore = create<IndiceState>((set) => ({
+export const useIndiceStore = create<IndiceState>((set, get) => ({
   resultats: [],
   faritany: [],
   dimensionCodes: [],
   niveauLabel: null,
   loading: true,
   error: null,
-  load: async () => {
+  loadedAt: null,
+  loadedForUser: null,
+  // Audit M8 : cache TTL scopé par utilisateur — évite un refetch complet (5 A/R) à chaque visite de
+  // la page. `force` contourne le cache (rafraîchissement explicite).
+  load: async (force = false) => {
+    const st = get();
+    // Le contenu de l'indice est scopé par la RLS selon l'utilisateur appelant :
+    // le cache n'est réutilisable que pour la MÊME session (évite qu'un user B
+    // connecté dans le même onglet voie les données en cache d'un user A).
+    const currentUser = useAuthStore.getState().user?.id ?? null;
+    if (!force && st.loadedAt !== null && st.loadedForUser === currentUser
+        && Date.now() - st.loadedAt < INDICE_TTL_MS && st.resultats.length > 0) {
+      if (st.loading) set({ loading: false });
+      return;
+    }
     set({ loading: true, error: null });
     try {
       const { national, faritany, dimensionCodes, niveauLabel } = await getIndiceComplet();
-      set({ resultats: national, faritany, dimensionCodes, niveauLabel, loading: false });
+      set({ resultats: national, faritany, dimensionCodes, niveauLabel, loadedAt: Date.now(), loadedForUser: currentUser, loading: false });
     } catch (e) {
       set({ error: e instanceof Error ? e.message : String(e), loading: false });
     }
   },
   reset: () =>
-    set({ resultats: [], faritany: [], dimensionCodes: [], niveauLabel: null, loading: false, error: null }),
+    set({ resultats: [], faritany: [], dimensionCodes: [], niveauLabel: null, loadedAt: null, loadedForUser: null, loading: false, error: null }),
 }));

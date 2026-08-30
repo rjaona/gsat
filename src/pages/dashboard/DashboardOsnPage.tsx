@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/stores/authStore'
 import { useDashboardOsnStore } from '@/stores/dashboardOsnStore'
 import { listOrganisations, getLibelleNiveauLocal } from '@/services/organisationService'
-import { getDashboardStats } from '@/services/dashboardService'
+import { getDashboardStatsByOrgIds } from '@/services/dashboardService'
 import { listPlanStatsByOrgIds } from '@/services/planActionService'
 import { OsnScoreHero } from '@/components/dashboard/osn/OsnScoreHero'
 import { AsnParticipationRing } from '@/components/dashboard/osn/AsnParticipationRing'
@@ -105,16 +105,10 @@ export function DashboardOsnPage() {
     let cancelled = false
 
     const fetchAsnStats = async () => {
-      const results = await Promise.all(
-        asnOrgs.map(org => getDashboardStats(org.id).then(s => ({ id: org.id, s })))
-      )
+      // Audit M7 : une seule requête batchée `.in('org_id', ...)` au lieu de 33.
+      const results = await getDashboardStatsByOrgIds(asnOrgs.map(o => o.id))
       if (cancelled) return
-      setAsnStats(
-        results.reduce<Record<string, DashboardStats>>((acc, { id, s }) => {
-          if (s) acc[id] = s
-          return acc
-        }, {})
-      )
+      setAsnStats(results)
     }
 
     void fetchAsnStats()

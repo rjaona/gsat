@@ -88,6 +88,27 @@ export async function getDashboardStats(orgId: string): Promise<DashboardStats |
   return data ? rowToStats(data as Record<string, unknown>) : null;
 }
 
+/**
+ * Version batchée de getDashboardStats : une SEULE requête `.in('org_id', ...)`
+ * au lieu de N requêtes individuelles (évite le N+1 sur DashboardOsnPage à 33
+ * Faritany). Retourne une map org_id → stats (orgs sans ligne absentes).
+ */
+export async function getDashboardStatsByOrgIds(
+  orgIds: string[],
+): Promise<Record<string, DashboardStats>> {
+  if (orgIds.length === 0) return {};
+  const { data, error } = await supabase
+    .from('dashboard_stats')
+    .select('*')
+    .in('org_id', orgIds);
+  if (error) throw error;
+  return (data ?? []).reduce<Record<string, DashboardStats>>((acc, row) => {
+    const stats = rowToStats(row as Record<string, unknown>);
+    acc[stats.orgId] = stats;
+    return acc;
+  }, {});
+}
+
 export interface MoyenneNationale {
   scoreGlobal: number;
   scoreParDimension: Record<string, number>;
