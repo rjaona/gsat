@@ -19,3 +19,8 @@ functions/.env
 # OS
 .DS_Store
 Thumbs.db
+
+# Backups / dumps prod (JAMAIS committer — hash mots de passe, secrets)
+*.sql.bak
+gsat_backup_*.sql
+*_backup_*.sql
