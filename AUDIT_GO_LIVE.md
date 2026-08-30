@@ -12,13 +12,13 @@ L'analyse statique a levé **8 « bloquants » candidats**. Confrontés à la pr
 | Sévérité | Nombre | 
 |---|---|
 | 🔴 Bloquant | **1** (B1) — ✅ RÉSOLU |
-| 🟠 Majeur | 9 (dont M9 découvert en re-revue) |
+| 🟠 Majeur | 8 + M9 ✅ résolu |
 | 🟡 Mineur | 8 |
 | ✅ Corrigé pendant l'audit | 1 (B6) |
 | ❌ Réfuté / recadré par la prod | 6 |
 
 ### Décision go/no-go
-**GO conditionnel — B1 (seul bloquant) est corrigé et déployé.** Le go-live élargi peut partir côté sécurité d'isolation. **Deux conditions avant de provisionner des comptes responsable_osn/région** : (a) trancher M9 (trigger PV) sinon leur 1re validation `soumise→validee` échouera ; (b) M2 (auto-inscription). Fortement recommandés avant/juste après le lancement : désactiver l'auto-inscription (M2, 1 commande), et traiter le Chantier D SMTP (M1) puisqu'un rollout de 33 comptes sans recovery email est un point de friction opérationnel connu. Les majeurs perf ne bloquent pas (0 donnée saisie) mais doivent être planifiés avant l'usage terrain intensif.
+**GO conditionnel — B1 (seul bloquant) est corrigé et déployé.** Le go-live élargi peut partir côté sécurité d'isolation. M9 (trigger PV) a été corrigé dans la foulée → la validation OSN `soumise→validee` fonctionne. **Reste recommandé avant provisioning de comptes osn/région / lancement** : M2 (auto-inscription, runbook prêt) et M1 (SMTP, chantier D). Fortement recommandés avant/juste après le lancement : désactiver l'auto-inscription (M2, 1 commande), et traiter le Chantier D SMTP (M1) puisqu'un rollout de 33 comptes sans recovery email est un point de friction opérationnel connu. Les majeurs perf ne bloquent pas (0 donnée saisie) mais doivent être planifiés avant l'usage terrain intensif.
 
 ---
 
@@ -47,7 +47,7 @@ L'analyse statique a levé **8 « bloquants » candidats**. Confrontés à la pr
 | M6 | **Amplification d'écriture perf** : `writeScore` par frappe (pas de debounce) → recalc + UPDATE sur la ligne `dashboard_stats` OSN unique, 33 Faritany convergents | code PROUVÉ (non exercé, scores=0) | Debounce saisie + envisager recalcul asynchrone/agrégat OSN découplé |
 | M7 | **N+1 pages OSN** : `DashboardOsnPage:102-122` (33 requêtes), `PilotageOsnPage:92-118` (33×plans×actions) | code PROUVÉ | Utiliser le pattern batché `listPlanStatsByOrgIds`/`.in()` déjà présent à côté |
 | M8 | **Indice non borné/non caché** : `indiceService:44-57` charge toutes les évals de toutes les campagnes far, 5 A/R séquentiels, refetch à chaque visite | code PROUVÉ | Borne temporelle/pagination + cache store entre montages |
-| M9 | **Validation OSN `soumise→validee` bloquée par un trigger** : `fn_garde_auto_validation` (`20260804:755-784`) exige un PV comité sur toute transition `→validee` — règle conçue pour l'auto-validation Faritany (OLD=`en_cours`) qui capture par effet de bord la validation hiérarchique OSN (OLD=`soumise`, sans PV). Découvert en re-revue de B1, **vérifié empiriquement**. Préexistant, **latent** (0 compte osn/région). `soumise→en_cours` (renvoyer) marche ; `soumise→validee` (approuver) échoue toujours. | DB empirique | **Décision domaine** : garder l'exigence PV seulement pour OLD=`en_cours` (aligne le trigger sur son intention Faritany d'origine) — à confirmer que la validation OSN ne requiert pas de PV. À corriger AVANT de provisionner des comptes osn/région |
+| M9 ✅ | **RÉSOLU (PR #6)** — **Validation OSN `soumise→validee` bloquée par un trigger** : `fn_garde_auto_validation` (`20260804:755-784`) exige un PV comité sur toute transition `→validee` — règle conçue pour l'auto-validation Faritany (OLD=`en_cours`) qui capture par effet de bord la validation hiérarchique OSN (OLD=`soumise`, sans PV). Découvert en re-revue de B1, **vérifié empiriquement**. Préexistant, **latent** (0 compte osn/région). `soumise→en_cours` (renvoyer) marche ; `soumise→validee` (approuver) échoue toujours. | DB empirique | **CORRIGÉ** : `fn_garde_auto_validation` n'exige le PV que si OLD=`en_cours` (migration `20260830_fix_garde_pv_soumise`). Prouvé prod (BEGIN/ROLLBACK) : `en_cours→validee` sans PV bloqué ✅ ; `soumise→validee` sans PV passe ✅ |
 
 ---
 
