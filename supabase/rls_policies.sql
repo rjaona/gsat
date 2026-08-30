@@ -241,15 +241,24 @@ CREATE POLICY evals_insert ON evaluations
 --        RLS garantit seulement qu'on ne peut modifier que les évals accessibles
 CREATE POLICY evals_update ON evaluations
   FOR UPDATE TO authenticated
+  -- Audit B1 (2026-08-30) : 3e branche non bornee retiree (ecriture cross-tenant).
+  -- Elle autorisait responsable_region/responsable_osn/evaluateur a modifier toute
+  -- eval soumise/validee SANS contrainte d'org, et le WITH CHECK vide (= USING)
+  -- laissait meme reassigner org_id. Les cas legitimes sont couverts par
+  -- evals_update_resp_asn (saisie ASN) et evals_update_revue (revue OSN/region
+  -- bornee par hierarchie). WITH CHECK explicite = pas de deplacement cross-org.
   USING (
     (auth.jwt() ->> 'user_role') = 'admin_global'
     OR (
       (auth.jwt() ->> 'user_role') IN ('responsable_osn', 'evaluateur', 'utilisateur_asn')
       AND org_id = (auth.jwt() ->> 'org_id')::uuid
     )
+  )
+  WITH CHECK (
+    (auth.jwt() ->> 'user_role') = 'admin_global'
     OR (
-      (auth.jwt() ->> 'user_role') IN ('responsable_region', 'responsable_osn', 'evaluateur')
-      AND statut IN ('soumise', 'validee')
+      (auth.jwt() ->> 'user_role') IN ('responsable_osn', 'evaluateur', 'utilisateur_asn')
+      AND org_id = (auth.jwt() ->> 'org_id')::uuid
     )
   );
 
