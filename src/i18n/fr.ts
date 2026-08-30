@@ -197,6 +197,10 @@ export const fr = {
       vide: 'Aucune donnée : campagne Faritany ou évaluation nationale absente.',
       col: { critere: 'Critère national', noteNationale: 'Note nationale', id: 'Indice (0–100)', ecart: 'Écart', interpretation: 'Lecture' },
       interpretation: { alerte: 'Déploiement défaillant', coherent: 'Cohérent', bonne_pratique: 'Bonne pratique locale' },
+      comparaison: {
+        titre: 'Comparaison par province',
+        sousTitre: 'Indice de déploiement par Faritany (0–100), global et par dimension, regroupé par province.',
+      },
     },
   },
   auth: {
