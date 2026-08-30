@@ -12,7 +12,7 @@ L'analyse statique a levé **8 « bloquants » candidats**. Confrontés à la pr
 | Sévérité | Nombre | 
 |---|---|
 | 🔴 Bloquant | **1** (B1) — ✅ RÉSOLU |
-| 🟠 Majeur | 8 + M9 ✅ résolu |
+| 🟠 Majeur | 8 (M5/M7/M8 ✅ ; M9 ✅ ; M6 ⏸ différé ; restent M1/M2/M3/M4) |
 | 🟡 Mineur | 8 |
 | ✅ Corrigé pendant l'audit | 1 (B6) |
 | ❌ Réfuté / recadré par la prod | 6 |
@@ -43,10 +43,10 @@ L'analyse statique a levé **8 « bloquants » candidats**. Confrontés à la pr
 | M2 | **Auto-inscription ouverte** (`GOTRUE_DISABLE_SIGNUP=false` + `MAILER_AUTOCONFIRM=true`) → tout internaute lit annuaire/référentiel/campagnes | prod `printenv` CONFIRMÉ | Runbook ops `docs/superpowers/runbooks/2026-08-30-m2-disable-signup.md` : config.toml `[auth] enable_signup=false` + `supabase stop/start`. **Non appliqué** (exige restart complet du stack via CLI non installée — différé par décision) |
 | M3 | **Drift config repo↔prod** : `config.toml` versionné (`edge_runtime enabled=false`, inbucket/edge à d'autres lignes) ≠ prod (`enabled=true`) → déployer le repo casse l'edge | prod `sed config.toml` | Réaligner le `config.toml` du repo sur l'état prod réel |
 | M4 | **Bootstrap non reconstructible** : `schema.sql`/`rls_policies.sql`/`hook`/`trigger` hors `supabase/migrations/` → `supabase db reset` produit une base sans tables/RLS/hook | repo PROUVÉ | Convertir ces fichiers en migrations ordonnées, ou documenter+scripter un bootstrap fidèle |
-| M5 | **Scorer buggé périmé au repo** : `trigger_on_score_write.sql` réinstalle la vieille fn (N/A=0, pas de socle) ; CLAUDE.md pointe les mauvais fichiers | prod = version corrigée vivante (non clobbée) | Supprimer/neutraliser le fichier, corriger CLAUDE.md, câbler la parité `parite-sql.diff.test` en CI |
-| M6 | **Amplification d'écriture perf** : `writeScore` par frappe (pas de debounce) → recalc + UPDATE sur la ligne `dashboard_stats` OSN unique, 33 Faritany convergents | code PROUVÉ (non exercé, scores=0) | Debounce saisie + envisager recalcul asynchrone/agrégat OSN découplé |
-| M7 | **N+1 pages OSN** : `DashboardOsnPage:102-122` (33 requêtes), `PilotageOsnPage:92-118` (33×plans×actions) | code PROUVÉ | Utiliser le pattern batché `listPlanStatsByOrgIds`/`.in()` déjà présent à côté |
-| M8 | **Indice non borné/non caché** : `indiceService:44-57` charge toutes les évals de toutes les campagnes far, 5 A/R séquentiels, refetch à chaque visite | code PROUVÉ | Borne temporelle/pagination + cache store entre montages |
+| M5 ✅ | **RÉSOLU (PR #7)** — **Scorer buggé périmé au repo** : `trigger_on_score_write.sql` réinstalle la vieille fn (N/A=0, pas de socle) ; CLAUDE.md pointe les mauvais fichiers | prod = version corrigée vivante (non clobbée) | Supprimer/neutraliser le fichier, corriger CLAUDE.md, câbler la parité `parite-sql.diff.test` en CI |
+| M6 ⏸ | **DIFFÉRÉ** (touche le flux de sauvegarde cœur — à faire avec usage réel + flush obligatoire) — **Amplification d'écriture perf** : `writeScore` par frappe (pas de debounce) → recalc + UPDATE sur la ligne `dashboard_stats` OSN unique, 33 Faritany convergents | code PROUVÉ (non exercé, scores=0) | Debounce saisie + envisager recalcul asynchrone/agrégat OSN découplé |
+| M7 ✅ | **RÉSOLU (PR #8, déployé)** — **N+1 pages OSN** : `DashboardOsnPage:102-122` (33 requêtes), `PilotageOsnPage:92-118` (33×plans×actions) | code PROUVÉ | Utiliser le pattern batché `listPlanStatsByOrgIds`/`.in()` déjà présent à côté |
+| M8 ✅ | **RÉSOLU (PR #8, cache session-scopé)** — **Indice non borné/non caché** : `indiceService:44-57` charge toutes les évals de toutes les campagnes far, 5 A/R séquentiels, refetch à chaque visite | code PROUVÉ | Borne temporelle/pagination + cache store entre montages |
 | M9 ✅ | **RÉSOLU (PR #6)** — **Validation OSN `soumise→validee` bloquée par un trigger** : `fn_garde_auto_validation` (`20260804:755-784`) exige un PV comité sur toute transition `→validee` — règle conçue pour l'auto-validation Faritany (OLD=`en_cours`) qui capture par effet de bord la validation hiérarchique OSN (OLD=`soumise`, sans PV). Découvert en re-revue de B1, **vérifié empiriquement**. Préexistant, **latent** (0 compte osn/région). `soumise→en_cours` (renvoyer) marche ; `soumise→validee` (approuver) échoue toujours. | DB empirique | **CORRIGÉ** : `fn_garde_auto_validation` n'exige le PV que si OLD=`en_cours` (migration `20260830_fix_garde_pv_soumise`). Prouvé prod (BEGIN/ROLLBACK) : `en_cours→validee` sans PV bloqué ✅ ; `soumise→validee` sans PV passe ✅ |
 
 ---
