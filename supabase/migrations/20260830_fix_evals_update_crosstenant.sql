@@ -28,9 +28,9 @@
 -- trigger fn_garde_auto_validation (migration 20260804) qui exige un PV comite
 -- sur toute transition -> validee — regle concue pour l'auto-validation Faritany
 -- (OLD='en_cours'), qui capture par effet de bord la validation hierarchique OSN
--- (OLD='soumise', sans PV). La branche "renvoyer" (soumise -> en_cours) fonctionne.
--- Correctif du trigger = decision domaine (la validation OSN requiert-elle un PV ?)
--- traitee hors de ce fix de securite. Voir AUDIT_GO_LIVE.md.
+-- (OLD='soumise', sans PV). CORRIGE par la migration soeur
+-- 20260830_fix_garde_pv_soumise.sql (PV exige seulement si OLD='en_cours').
+-- Decision produit : la validation OSN ne requiert pas de PV. Voir AUDIT_GO_LIVE.md.
 --
 -- IDEMPOTENT : ALTER POLICY + DROP POLICY IF EXISTS/CREATE, DDL pur, rejouable.
 -- =============================================================================
