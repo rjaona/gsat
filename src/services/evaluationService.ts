@@ -332,8 +332,14 @@ export async function updateStatutEvaluation(
     updateData['submitted_at'] = new Date().toISOString();
   }
 
-  const { error } = await supabase.from('evaluations').update(updateData as unknown as Database['public']['Tables']['evaluations']['Update']).eq('id', id);
+  const { data: updated, error } = await supabase.from('evaluations').update(updateData as unknown as Database['public']['Tables']['evaluations']['Update']).eq('id', id).select('id');
   if (error) throw error;
+  if (!updated || updated.length === 0) {
+    // 0 ligne modifiee SANS erreur = la RLS a filtre la cible (ou eval absente).
+    // Sans ce garde, l'echec serait silencieux (succes apparent cote UI) — c'est
+    // ce qui aurait masque une regression d'isolation. Audit go-live 2026-08-30.
+    throw new Error(`Changement de statut refuse (droits insuffisants) : ${id} -> ${statut}`);
+  }
 
   // Notifications silencieuses
   if (statut === 'soumise' && options?.recipientId) {
