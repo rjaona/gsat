@@ -11,21 +11,22 @@ L'analyse statique a levé **8 « bloquants » candidats**. Confrontés à la pr
 ### Décompte (après preuve prod)
 | Sévérité | Nombre | 
 |---|---|
-| 🔴 Bloquant | **1** (B1) |
-| 🟠 Majeur | 8 |
-| 🟡 Mineur | 6 |
+| 🔴 Bloquant | **1** (B1) — ✅ RÉSOLU |
+| 🟠 Majeur | 9 (dont M9 découvert en re-revue) |
+| 🟡 Mineur | 8 |
 | ✅ Corrigé pendant l'audit | 1 (B6) |
 | ❌ Réfuté / recadré par la prod | 6 |
 
 ### Décision go/no-go
-**NO-GO conditionnel — 1 seul correctif bloquant.** Le go-live élargi peut partir dès que **B1 est corrigé** (fix trivial : borner/retirer la 3e branche de `evals_update`). Fortement recommandés avant/juste après le lancement : désactiver l'auto-inscription (M2, 1 commande), et traiter le Chantier D SMTP (M1) puisqu'un rollout de 33 comptes sans recovery email est un point de friction opérationnel connu. Les majeurs perf ne bloquent pas (0 donnée saisie) mais doivent être planifiés avant l'usage terrain intensif.
+**GO conditionnel — B1 (seul bloquant) est corrigé et déployé.** Le go-live élargi peut partir côté sécurité d'isolation. **Deux conditions avant de provisionner des comptes responsable_osn/région** : (a) trancher M9 (trigger PV) sinon leur 1re validation `soumise→validee` échouera ; (b) M2 (auto-inscription). Fortement recommandés avant/juste après le lancement : désactiver l'auto-inscription (M2, 1 commande), et traiter le Chantier D SMTP (M1) puisqu'un rollout de 33 comptes sans recovery email est un point de friction opérationnel connu. Les majeurs perf ne bloquent pas (0 donnée saisie) mais doivent être planifiés avant l'usage terrain intensif.
 
 ---
 
 ## 🔴 Bloquant
 
-### B1 — Trou d'écriture cross-tenant sur `evals_update`
-- **Fichier** : `supabase/rls_policies.sql:250-253` — **CONFIRMÉ LIVE** (`pg_policies` prod).
+### B1 — Trou d'écriture cross-tenant sur `evals_update` — ✅ **RÉSOLU** (PR #6, appliqué prod)
+- **Fichier** : `supabase/rls_policies.sql:250-253` — CONFIRMÉ LIVE puis CORRIGÉ.
+- **Correctif livré** : branche non bornée retirée + `WITH CHECK` borné org ; policy `evals_update_soumission` ré-ajoute la validation hiérarchique `soumise` BORNÉE (sinon `soumise→en_cours` régressait) ; `updateStatutEvaluation` durci (`.select`+throw sur 0 ligne). 2 revues indépendantes. `pg_policies` prod confirme le trou fermé. **Caveat → voir M9.**
 - **Défaut** : la policy `evals_update` a une 3e branche `(user_role IN ('responsable_region','responsable_osn','evaluateur')) AND statut IN ('soumise','validee')` **sans aucune contrainte d'org/hiérarchie**, et son `WITH CHECK` est **vide** (PostgreSQL réutilise le `USING`). Les policies permissives étant OR-combinées, un compte au rôle `evaluateur` (ou region/osn) peut faire un `UPDATE` sur l'évaluation `soumise`/`validee` de **n'importe quel** Faritany — modifier ses champs, changer son statut, voire réassigner `org_id`.
 - **Exploitabilité actuelle : nulle** (0 compte au rôle vulnérable, 0 éval `soumise`/`validee`). **Mais elle s'ouvre exactement quand le go-live scale** : dès qu'on crée un compte evaluateur/coordinateur régional, ou dès qu'une éval terrain atteint `soumise`/`validee`.
 - **Pourquoi c'est un pur bug** : les cas légitimes sont déjà couverts ailleurs — `evals_update_resp_asn` (saisie ASN), branche 2 de `evals_update` (responsable_osn/evaluateur/utilisateur_asn bornés à leur org), `evals_update_revue` (revue OSN/région bornée par hiérarchie). La 3e branche n'ajoute qu'un trou.
@@ -39,13 +40,14 @@ L'analyse statique a levé **8 « bloquants » candidats**. Confrontés à la pr
 | # | Constat | Preuve | Remédiation |
 |---|---|---|---|
 | M1 | **SMTP → inbucket** : recovery mot de passe + notifs email non délivrés (`SMTP_HOST=inbucket:1025`, `API_EXTERNAL_URL=127.0.0.1`) | prod `printenv` CONFIRMÉ | Chantier D (runbook prêt, bloqué App Password Gmail). Contournement = reset admin service_role |
-| M2 | **Auto-inscription ouverte** (`GOTRUE_DISABLE_SIGNUP=false` + `MAILER_AUTOCONFIRM=true`) → tout internaute lit annuaire/référentiel/campagnes | prod `printenv` CONFIRMÉ | `GOTRUE_DISABLE_SIGNUP=true` (comptes provisionnés par admin). 1 var d'env + restart auth |
+| M2 | **Auto-inscription ouverte** (`GOTRUE_DISABLE_SIGNUP=false` + `MAILER_AUTOCONFIRM=true`) → tout internaute lit annuaire/référentiel/campagnes | prod `printenv` CONFIRMÉ | Runbook ops `docs/superpowers/runbooks/2026-08-30-m2-disable-signup.md` : config.toml `[auth] enable_signup=false` + `supabase stop/start`. **Non appliqué** (exige restart complet du stack via CLI non installée — différé par décision) |
 | M3 | **Drift config repo↔prod** : `config.toml` versionné (`edge_runtime enabled=false`, inbucket/edge à d'autres lignes) ≠ prod (`enabled=true`) → déployer le repo casse l'edge | prod `sed config.toml` | Réaligner le `config.toml` du repo sur l'état prod réel |
 | M4 | **Bootstrap non reconstructible** : `schema.sql`/`rls_policies.sql`/`hook`/`trigger` hors `supabase/migrations/` → `supabase db reset` produit une base sans tables/RLS/hook | repo PROUVÉ | Convertir ces fichiers en migrations ordonnées, ou documenter+scripter un bootstrap fidèle |
 | M5 | **Scorer buggé périmé au repo** : `trigger_on_score_write.sql` réinstalle la vieille fn (N/A=0, pas de socle) ; CLAUDE.md pointe les mauvais fichiers | prod = version corrigée vivante (non clobbée) | Supprimer/neutraliser le fichier, corriger CLAUDE.md, câbler la parité `parite-sql.diff.test` en CI |
 | M6 | **Amplification d'écriture perf** : `writeScore` par frappe (pas de debounce) → recalc + UPDATE sur la ligne `dashboard_stats` OSN unique, 33 Faritany convergents | code PROUVÉ (non exercé, scores=0) | Debounce saisie + envisager recalcul asynchrone/agrégat OSN découplé |
 | M7 | **N+1 pages OSN** : `DashboardOsnPage:102-122` (33 requêtes), `PilotageOsnPage:92-118` (33×plans×actions) | code PROUVÉ | Utiliser le pattern batché `listPlanStatsByOrgIds`/`.in()` déjà présent à côté |
 | M8 | **Indice non borné/non caché** : `indiceService:44-57` charge toutes les évals de toutes les campagnes far, 5 A/R séquentiels, refetch à chaque visite | code PROUVÉ | Borne temporelle/pagination + cache store entre montages |
+| M9 | **Validation OSN `soumise→validee` bloquée par un trigger** : `fn_garde_auto_validation` (`20260804:755-784`) exige un PV comité sur toute transition `→validee` — règle conçue pour l'auto-validation Faritany (OLD=`en_cours`) qui capture par effet de bord la validation hiérarchique OSN (OLD=`soumise`, sans PV). Découvert en re-revue de B1, **vérifié empiriquement**. Préexistant, **latent** (0 compte osn/région). `soumise→en_cours` (renvoyer) marche ; `soumise→validee` (approuver) échoue toujours. | DB empirique | **Décision domaine** : garder l'exigence PV seulement pour OLD=`en_cours` (aligne le trigger sur son intention Faritany d'origine) — à confirmer que la validation OSN ne requiert pas de PV. À corriger AVANT de provisionner des comptes osn/région |
 
 ---
 
@@ -58,6 +60,8 @@ L'analyse statique a levé **8 « bloquants » candidats**. Confrontés à la pr
 | m3 | `updateReferentiel` (UI admin) upsert sans `onConflict` → 23505 au 2e import d'un référentiel | code PROUVÉ |
 | m4 | Recalcul `EXCEPTION WHEN OTHERS…RETURN` avale les erreurs → score périmé silencieux (observabilité) | code PROUVÉ |
 | m5 | Subscribe realtime non filtrés (`campagnes`, `referentiel`, `carto`, `subscribeAllEvaluations`) → refetch large sur événement | code PROUVÉ |
+| m7 | `evals_update_soumission` (et `evals_update_revue`) : `WITH CHECK` ne pin pas `org_id` — **non exploitable** (evals_select bloque le cross-sous-arbre) mais fragile (dépend d'evals_select). Pin explicite recommandé | re-revue B1 (DB) |
+| m8 | `evals_select` (`rls_policies.sql:196-205`) : la branche `responsable_region` n'atteint pas le petit-enfant (ASN) → rôle région inerte pour charger une éval. Prospectif (multi-pays, 0 compte région) | re-revue B1 |
 | m6 | `preuves_storage_insert` n'exige pas statut brouillon/en_cours ; hook `actif=TRUE` (user désactivé s'authentifie encore) ; `fn_moyenne_nationale`/`fn_write_audit_log` gardes minimales ; `MODEL` chat-with-ai figé sans fallback ; commentaire `parent_version='3.0'` vs data `'v3_0'` | code PROUVÉ |
 
 **Pas de monitoring/alerting** ni de **backup automatisé** versionnés, et **firewall hPanel** qui bloque l'accès ops par intermittence : ce sont des lacunes opérationnelles réelles (majeures sur le principe) mais hors du périmètre « correctif code » — à porter comme chantiers ops dédiés (recommandation de gouvernance, pas de correctif dans cette campagne).
