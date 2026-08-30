@@ -244,9 +244,11 @@ CREATE POLICY evals_update ON evaluations
   -- Audit B1 (2026-08-30) : 3e branche non bornee retiree (ecriture cross-tenant).
   -- Elle autorisait responsable_region/responsable_osn/evaluateur a modifier toute
   -- eval soumise/validee SANS contrainte d'org, et le WITH CHECK vide (= USING)
-  -- laissait meme reassigner org_id. Les cas legitimes sont couverts par
-  -- evals_update_resp_asn (saisie ASN) et evals_update_revue (revue OSN/region
-  -- bornee par hierarchie). WITH CHECK explicite = pas de deplacement cross-org.
+  -- laissait meme reassigner org_id. Cas legitimes restants : own-org couvert
+  -- par la branche 2 ci-dessous + evals_update_resp_asn (saisie ASN) ; validation
+  -- hierarchique cross-org bornee par evals_update_soumission (statut 'soumise',
+  -- migration 20260830) et evals_update_revue (statut 'validee', migration
+  -- 20260804). WITH CHECK explicite = pas de deplacement cross-org.
   USING (
     (auth.jwt() ->> 'user_role') = 'admin_global'
     OR (
