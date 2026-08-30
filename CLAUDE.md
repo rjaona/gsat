@@ -102,9 +102,13 @@ Règles :
 ## Scoring — les pièges
 
 Le calcul vit à **deux endroits qui doivent rester identiques** :
-`supabase/trigger_on_score_write.sql` (`fn_recalculate_scores`) et
-`services/referentielService.ts`. Toute modification de l'un impose l'autre,
-plus une mise à jour de `__tests__/scoring.test.ts`.
+- **SQL** : `fn_recalculate_scores` — source canonique = migration
+  `supabase/migrations/20260804_faritany.sql` (version corrigée : N/A exclu du
+  dénominateur via FILTER, mode socle). `supabase/trigger_on_score_write.sql` en
+  porte une **copie verbatim** (audit M5) + crée le trigger `on_score_write`.
+- **TS** : `src/services/scoring.ts` (PAS `referentielService.ts`).
+Toute modification de l'un impose l'autre + `__tests__/scoring.test.ts` ; la
+parité SQL↔TS est vérifiée par `__tests__/parite-sql.diff.test.ts` (PG live requis).
 
 ```
 score_dimension = round(somme_notes / (nb_criteres_comptes * 3) * 100, 2)
