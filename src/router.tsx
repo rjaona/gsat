@@ -2,6 +2,8 @@ import { lazy, Suspense, type ComponentType } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '@/components/layout'
 import { LoginPage } from '@/components/auth/LoginPage'
+import { ForgotPasswordPage } from '@/components/auth/ForgotPasswordPage'
+import { ResetPasswordPage } from '@/components/auth/ResetPasswordPage'
 import { PrivateRoute } from '@/components/auth/PrivateRoute'
 import { RoleGuard } from '@/components/auth/RoleGuard'
 
@@ -134,6 +136,14 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
   },
   {
     path: '/',

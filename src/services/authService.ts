@@ -115,6 +115,45 @@ export async function refreshSession(): Promise<Session | null> {
   return data.session;
 }
 
+// ── Récupération de mot de passe (Chantier D) ────────────────────────────────
+
+/**
+ * Déclenche l'envoi d'un email de réinitialisation.
+ * redirectTo pointe sur la page /reset-password de l'origine courante
+ * (prod, staging ou local) ; cette URL doit figurer dans URI_ALLOW_LIST de GoTrue.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const redirectTo = `${window.location.origin}/reset-password`;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw error;
+}
+
+/**
+ * Met à jour le mot de passe de la session courante (session de recovery).
+ */
+export async function updatePassword(newPassword: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+/**
+ * Établit la session de recovery, quel que soit le flow GoTrue.
+ * - Flow implicit : detectSessionInUrl a déjà posé la session → getSession la voit.
+ * - Flow PKCE : un ?code= est présent dans l'URL → l'échanger contre une session.
+ * Retourne true si une session est disponible pour changer le mot de passe.
+ */
+export async function ensureRecoverySession(): Promise<boolean> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) return true;
+
+  const code = new URLSearchParams(window.location.search).get('code');
+  if (code) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data.session) return true;
+  }
+  return false;
+}
+
 // ── Helpers de rôle ───────────────────────────────────────────────────────────
 
 export function isAdminGlobal(role?: UserRole): boolean {

@@ -18,6 +18,33 @@ import type { fr } from './fr';
 type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] };
 
 export const mg: DeepPartial<typeof fr> = {
+  auth: {
+    login: 'Hiditra',
+    logout: 'Hivoaka',
+    email: 'Mailaka',
+    password: 'Tenimiafina',
+    forgotLink: 'Hadino ny tenimiafina ?',
+    forgot: {
+      title: 'Avereno ny tenimiafina',
+      description: 'Ampidiro ny mailakao : raha misy kaonty, handefasana rohy fanavaozana ianao.',
+      emailLabel: 'Mailaka',
+      submit: 'Alefaso ny rohy',
+      sent: 'Raha misy kaonty amin’ity mailaka ity, dia vao nalefa ny rohy fanavaozana.',
+      error: 'Nisy olana. Andramo indray afaka kelikely.',
+      back: 'Hiverina amin’ny fidirana',
+    },
+    reset: {
+      title: 'Misafidiana tenimiafina vaovao',
+      newPassword: 'Tenimiafina vaovao',
+      confirmPassword: 'Hamafiso ny tenimiafina',
+      submit: 'Tehirizo',
+      success: 'Voaova ny tenimiafina. Mba miandry kely…',
+      mismatch: 'Tsy mitovy ny tenimiafina roa.',
+      tooShort: 'Tokony ho 8 litera farafahakeliny ny tenimiafina.',
+      invalidLink: 'Tsy mety na efa lany daty ity rohy ity.',
+      requestNew: 'Mangataha rohy vaovao',
+    },
+  },
   common: {
     chargement: 'Miandry kely...',
     enregistrer: 'Tehirizo',
