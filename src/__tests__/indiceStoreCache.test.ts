@@ -11,10 +11,12 @@ const h = vi.hoisted(() => ({
 vi.mock('@/services/indiceService', () => ({ getIndiceComplet: h.getIndiceComplet }));
 
 import { useIndiceStore } from '@/stores/indiceStore';
+import { useAuthStore } from '@/stores/authStore';
 
 beforeEach(() => {
   h.getIndiceComplet.mockClear();
-  useIndiceStore.setState({ resultats: [], faritany: [], loadedAt: null, loading: true, error: null });
+  useIndiceStore.setState({ resultats: [], faritany: [], loadedAt: null, loadedForUser: null, loading: true, error: null });
+  useAuthStore.setState({ user: null });
 });
 
 describe('indiceStore cache TTL (audit M8)', () => {
@@ -29,6 +31,15 @@ describe('indiceStore cache TTL (audit M8)', () => {
   it('force=true contourne le cache', async () => {
     await useIndiceStore.getState().load();
     await useIndiceStore.getState().load(true);
+    expect(h.getIndiceComplet).toHaveBeenCalledTimes(2);
+  });
+
+  it('refetch si l\'utilisateur change (pas de fuite inter-session)', async () => {
+    useAuthStore.setState({ user: { id: 'A' } as never });
+    await useIndiceStore.getState().load();
+    // user B dans le même onglet → le cache de A ne doit PAS être réutilisé
+    useAuthStore.setState({ user: { id: 'B' } as never });
+    await useIndiceStore.getState().load();
     expect(h.getIndiceComplet).toHaveBeenCalledTimes(2);
   });
 });

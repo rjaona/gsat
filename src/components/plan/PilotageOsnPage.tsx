@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import { listOrganisations } from '@/services/organisationService';
 import { listActionAggByOrgIds } from '@/services/planActionService';
-import type { Organisation, PlanAction, Action, ActionStatut } from '@/types';
+import type { Organisation } from '@/types';
 
 function Icon({ name, size = 20 }: { name: string; size?: number }) {
   return (
