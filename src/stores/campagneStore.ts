@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Campagne, CampagneStatut } from '@/types';
 import {
-  subscribeCampagnes,
+  listCampagnes,
   getCampagne,
   createCampagne,
   updateCampagne,
@@ -17,7 +17,7 @@ interface CampagneState {
   error: string | null;
 
   // Abonnement temps réel
-  subscribe: (filtreStatut?: CampagneStatut) => () => void;
+  subscribe: (filtreStatut?: CampagneStatut) => Promise<() => void>;
 
   // Actions
   select: (id: string) => Promise<void>;
@@ -47,14 +47,16 @@ export const useCampagneStore = create<CampagneState>((set, get) => ({
   loading: false,
   error: null,
 
-  subscribe: (filtreStatut?: CampagneStatut) => {
+  subscribe: async (filtreStatut?: CampagneStatut) => {
     set({ loading: true, error: null });
-    const unsubscribe = subscribeCampagnes(
-      campagnes => set({ campagnes, loading: false }),
-      err => set({ error: err.message, loading: false }),
-      filtreStatut
-    );
-    return unsubscribe;
+    try {
+      const campagnes = await listCampagnes(filtreStatut);
+      set({ campagnes, loading: false });
+    } catch (err) {
+      set({ error: (err as Error).message, loading: false });
+    }
+    // Retourne un no-op pour compatibilité avec les useEffect existants
+    return () => {};
   },
 
   select: async (id: string) => {

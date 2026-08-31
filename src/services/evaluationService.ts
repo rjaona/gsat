@@ -175,23 +175,12 @@ export function subscribeEvaluationScores(
   return () => { void supabase.removeChannel(ch); };
 }
 
-export function subscribeAllEvaluations(
-  onData: (evaluations: Evaluation[]) => void,
-  onError?: (err: Error) => void
-): () => void {
-  const fetch = () =>
-    supabase.from('evaluations').select('*').order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) { onError?.(error); return; }
-        onData((data ?? []).map(r => rowToEval(r as Record<string, unknown>)));
-      });
-
-  void fetch();
-
-  const ch = supabase.channel('evaluations-all')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'evaluations' }, () => void fetch())
-    .subscribe();
-  return () => { void supabase.removeChannel(ch); };
+export async function listAllEvaluations(): Promise<Evaluation[]> {
+  const { data, error } = await supabase
+    .from('evaluations').select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(r => rowToEval(r as Record<string, unknown>));
 }
 
 export function subscribeEvaluationsByOrg(

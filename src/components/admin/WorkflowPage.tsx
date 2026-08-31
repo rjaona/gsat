@@ -125,8 +125,9 @@ export function WorkflowPage() {
   const [scoresByCampagne, setScoresByCampagne] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    const unsubscribe = subscribe();
-    return unsubscribe;
+    let cleanup = () => {};
+    void subscribe().then(unsub => { cleanup = unsub; });
+    return () => cleanup();
   }, [subscribe]);
 
   // Charger le score moyen de chaque campagne dès que la liste change

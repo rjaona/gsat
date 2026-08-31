@@ -68,23 +68,6 @@ export async function listCampagnes(filtreStatut?: CampagneStatut): Promise<Camp
 
 // ── Abonnement temps réel ─────────────────────────────────────────────────────
 
-export function subscribeCampagnes(
-  onData: (campagnes: Campagne[]) => void,
-  onError?: (err: Error) => void,
-  filtreStatut?: CampagneStatut
-): () => void {
-  void listCampagnes(filtreStatut).then(onData).catch(onError);
-
-  const channel = supabase
-    .channel('campagnes-realtime')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'campagnes' }, () => {
-      void listCampagnes(filtreStatut).then(onData).catch(onError);
-    })
-    .subscribe();
-
-  return () => { void supabase.removeChannel(channel); };
-}
-
 export function subscribeCampagnesOrganisateur(
   organisateurId: string,
   onData: (campagnes: Campagne[]) => void,

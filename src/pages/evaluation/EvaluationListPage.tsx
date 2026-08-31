@@ -6,8 +6,8 @@ import { useCampagneStore } from '@/stores/campagneStore'
 import { EvaluationWorkflowBadge } from '@/components/evaluation/EvaluationWorkflowBadge'
 import { listOrganisations } from '@/services/organisationService'
 import {
-  subscribeAllEvaluations,
-  subscribeEvaluationsByOrg,
+  listAllEvaluations,
+  listEvaluationsByOrg,
 } from '@/services/evaluationService'
 import type { Evaluation, EvaluationStatut, Organisation } from '@/types'
 
@@ -89,8 +89,9 @@ export function EvaluationListPage() {
 
   // Subscribe to campagnes for name resolution
   useEffect(() => {
-    const unsub = subscribeCampagnes()
-    return unsub
+    let cleanup = () => {};
+    void subscribeCampagnes().then(unsub => { cleanup = unsub; });
+    return () => cleanup();
   }, [subscribeCampagnes])
 
   // Load organisations for name resolution
@@ -98,25 +99,20 @@ export function EvaluationListPage() {
     listOrganisations().then(setOrgs).catch(() => { /* ignore */ })
   }, [])
 
-  // Subscribe to evaluations based on role
+  // Fetch evaluations based on role (no global realtime — scaling)
   useEffect(() => {
     setLoading(true)
     setError(null)
 
     const isOrgScoped = role === 'utilisateur_asn' || role === 'responsable_osn'
 
-    const unsub = isOrgScoped && orgId
-      ? subscribeEvaluationsByOrg(
-          orgId,
-          evals => { setEvaluations(evals); setLoading(false) },
-          err => { setError(err.message); setLoading(false) },
-        )
-      : subscribeAllEvaluations(
-          evals => { setEvaluations(evals); setLoading(false) },
-          err => { setError(err.message); setLoading(false) },
-        )
+    const doFetch = isOrgScoped && orgId
+      ? () => listEvaluationsByOrg(orgId)
+      : () => listAllEvaluations()
 
-    return unsub
+    doFetch()
+      .then(evals => { setEvaluations(evals); setLoading(false) })
+      .catch(err => { setError((err as Error).message); setLoading(false) })
   }, [role, orgId])
 
   // Name lookup maps

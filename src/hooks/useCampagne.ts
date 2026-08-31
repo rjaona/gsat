@@ -10,8 +10,9 @@ export function useCampagnes(filtreStatut?: CampagneStatut) {
   const { campagnes, loading, error, subscribe } = useCampagneStore();
 
   useEffect(() => {
-    const unsubscribe = subscribe(filtreStatut);
-    return unsubscribe;
+    let cleanup = () => {};
+    void subscribe(filtreStatut).then(unsub => { cleanup = unsub; });
+    return () => cleanup();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtreStatut]);
 
@@ -85,8 +86,9 @@ export function useCampagnesOuvertes() {
   const { getCampagnesOuvertes, loading, error, subscribe } = useCampagneStore();
 
   useEffect(() => {
-    const unsubscribe = subscribe('ouverte');
-    return unsubscribe;
+    let cleanup = () => {};
+    void subscribe('ouverte').then(unsub => { cleanup = unsub; });
+    return () => cleanup();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

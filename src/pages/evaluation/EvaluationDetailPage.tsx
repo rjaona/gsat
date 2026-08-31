@@ -38,8 +38,9 @@ export function EvaluationDetailPage() {
   // Subscribe to campagnes for name resolution
   const { campagnes, subscribe: subscribeCampagnes } = useCampagneStore()
   useEffect(() => {
-    const unsub = subscribeCampagnes()
-    return unsub
+    let cleanup = () => {};
+    void subscribeCampagnes().then(unsub => { cleanup = unsub; });
+    return () => cleanup();
   }, [subscribeCampagnes])
 
   // La version du référentiel vient TOUJOURS de la campagne de l'évaluation,

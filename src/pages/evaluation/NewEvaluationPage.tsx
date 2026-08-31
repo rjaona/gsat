@@ -34,8 +34,9 @@ export function NewEvaluationPage() {
 
   // Subscribe to campagnes
   useEffect(() => {
-    const unsub = subscribeCampagnes('ouverte')
-    return unsub
+    let cleanup = () => {};
+    void subscribeCampagnes('ouverte').then(unsub => { cleanup = unsub; });
+    return () => cleanup();
   }, [subscribeCampagnes])
 
   // Load organisations if admin/osn role

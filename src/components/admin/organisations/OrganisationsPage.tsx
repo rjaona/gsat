@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 import type { Organisation } from '@/types';
-import { subscribeOrganisations, deleteOrganisation } from '@/services/organisationService';
+import { listOrganisations, deleteOrganisation } from '@/services/organisationService';
 import { OrgTree } from './OrgTree';
 import { OrgFormModal } from './OrgFormModal';
 
@@ -17,17 +17,15 @@ export function OrganisationsPage() {
 
   useEffect(() => {
     setLoading(true);
-    const unsub = subscribeOrganisations(
-      orgs => {
+    listOrganisations()
+      .then(orgs => {
         setOrganisations(orgs);
         setLoading(false);
-      },
-      err => {
+      })
+      .catch(err => {
         setError(err.message);
         setLoading(false);
-      }
-    );
-    return unsub;
+      });
   }, []);
 
   const handleDelete = useCallback(

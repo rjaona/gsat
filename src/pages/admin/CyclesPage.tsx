@@ -146,8 +146,9 @@ export function CyclesPage() {
 
   // Abonnement temps réel
   useEffect(() => {
-    const unsub = subscribe()
-    return unsub
+    let cleanup = () => {};
+    void subscribe().then(unsub => { cleanup = unsub; });
+    return () => cleanup();
   }, [subscribe])
 
   // Filtrage et recherche

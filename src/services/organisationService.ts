@@ -79,27 +79,6 @@ export async function listOrganisations(type?: OrgType, parentId?: string): Prom
 
 // ── Abonnement temps réel ─────────────────────────────────────────────────────
 
-export function subscribeOrganisations(
-  onData: (orgs: Organisation[]) => void,
-  onError?: (err: Error) => void,
-  type?: OrgType
-): () => void {
-  // Chargement initial
-  void listOrganisations(type).then(onData).catch(onError);
-
-  // Écoute des changements Supabase Realtime
-  const channel = supabase
-    .channel('organisations-realtime')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'organisations' },
-      () => void listOrganisations(type).then(onData).catch(onError)
-    )
-    .subscribe();
-
-  return () => { void supabase.removeChannel(channel); };
-}
-
 // ── Création ──────────────────────────────────────────────────────────────────
 
 export async function createOrganisation(payload: OrganisationPayload): Promise<string> {
