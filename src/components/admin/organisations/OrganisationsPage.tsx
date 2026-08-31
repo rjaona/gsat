@@ -15,18 +15,22 @@ export function OrganisationsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [editOrg, setEditOrg] = useState<Organisation | null>(null);
 
-  useEffect(() => {
+  const refreshOrgs = useCallback(async () => {
     setLoading(true);
-    listOrganisations()
-      .then(orgs => {
-        setOrganisations(orgs);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message);
-        setLoading(false);
-      });
+    setError(null);
+    try {
+      const orgs = await listOrganisations();
+      setOrganisations(orgs);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur lors du chargement');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshOrgs();
+  }, [refreshOrgs]);
 
   const handleDelete = useCallback(
     async (org: Organisation) => {
@@ -34,11 +38,12 @@ export function OrganisationsPage() {
       setDeleteError(null);
       try {
         await deleteOrganisation(org.id);
+        await refreshOrgs();
       } catch (err: unknown) {
         setDeleteError(err instanceof Error ? err.message : t('common.erreur'));
       }
     },
-    [t]
+    [t, refreshOrgs]
   );
 
   return (
@@ -100,7 +105,7 @@ export function OrganisationsPage() {
       {showCreate && (
         <OrgFormModal
           onClose={() => setShowCreate(false)}
-          onSuccess={() => {}}
+          onSuccess={() => { setShowCreate(false); refreshOrgs(); }}
         />
       )}
 
@@ -109,7 +114,7 @@ export function OrganisationsPage() {
         <OrgFormModal
           org={editOrg}
           onClose={() => setEditOrg(null)}
-          onSuccess={() => {}}
+          onSuccess={() => { setEditOrg(null); refreshOrgs(); }}
         />
       )}
     </div>
