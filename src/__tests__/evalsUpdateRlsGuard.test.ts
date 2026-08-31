@@ -13,7 +13,7 @@ import { resolve } from 'path';
 // La preuve d'exécution est le smoke prod sous vrais JWT (cf. AUDIT_GO_LIVE.md).
 
 const ROOT = process.cwd();
-const baseline = readFileSync(resolve(ROOT, 'supabase/rls_policies.sql'), 'utf8');
+const baseline = readFileSync(resolve(ROOT, 'supabase/reference/rls_policies.sql'), 'utf8');
 const migrationB1Raw = readFileSync(
   resolve(ROOT, 'supabase/migrations/20260830_fix_evals_update_crosstenant.sql'),
   'utf8',

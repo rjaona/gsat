@@ -10,7 +10,7 @@ import { resolve } from 'path';
 // marqueurs de la version corrigée pour empêcher un retour au corps buggé.
 
 const trig = readFileSync(
-  resolve(process.cwd(), 'supabase/trigger_on_score_write.sql'),
+  resolve(process.cwd(), 'supabase/reference/trigger_on_score_write.sql'),
   'utf8',
 );
 

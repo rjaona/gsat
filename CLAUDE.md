@@ -5,7 +5,7 @@ Base de données : **Supabase / PostgreSQL** (instance self-hosted, VPS Hostinge
 
 > ⚠️ **Ce fichier a été corrigé le 2026-08-04.** Les versions précédentes décrivaient
 > une stack Firebase / Firestore. **Le projet a migré sur Supabase** : le code utilise
-> `services/supabase.ts`, `supabase/schema.sql` et `types/supabase.generated.ts`.
+> `services/supabase.ts`, `supabase/reference/schema.sql` et `types/supabase.generated.ts`.
 > N'écris **jamais** de `collection()`, `doc()`, `onSnapshot()`, `serverTimestamp()`
 > ni d'import `firebase/*` : il n'y a plus de Firestore derrière.
 
@@ -104,8 +104,8 @@ Règles :
 Le calcul vit à **deux endroits qui doivent rester identiques** :
 - **SQL** : `fn_recalculate_scores` — source canonique = migration
   `supabase/migrations/20260804_faritany.sql` (version corrigée : N/A exclu du
-  dénominateur via FILTER, mode socle). `supabase/trigger_on_score_write.sql` en
-  porte une **copie verbatim** (audit M5) + crée le trigger `on_score_write`.
+  dénominateur via FILTER, mode socle). `supabase/reference/trigger_on_score_write.sql`
+  en porte une **copie verbatim** (audit M5) + crée le trigger `on_score_write`.
 - **TS** : `src/services/scoring.ts` (PAS `referentielService.ts`).
 Toute modification de l'un impose l'autre + `__tests__/scoring.test.ts` ; la
 parité SQL↔TS est vérifiée par `__tests__/parite-sql.diff.test.ts` (PG live requis).
@@ -160,8 +160,8 @@ brouillon → en_cours → validee ───────────────
 | `lecteur` | Lecture seule |
 
 Les claims (`role`, `org_id`, `org_type`, `parent_org_id`) sont injectés par le
-**Custom Access Token Hook** (`supabase/hook_custom_access_token.sql`) et lus en RLS via
-`auth.jwt() ->> 'role'`. **Ne pose jamais un claim côté client** : passer par la Edge
+**Custom Access Token Hook** (`supabase/reference/hook_custom_access_token.sql`) et lus en RLS via
+`auth.jwt() ->> 'user_role'`. **Ne pose jamais un claim côté client** : passer par la Edge
 Function `manage-user`.
 
 ---

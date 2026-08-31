@@ -7,10 +7,11 @@
       "name": "Infrastructure Supabase",
       "phase": 1,
       "files_to_create": [
-        "supabase/schema.sql",
-        "supabase/hook_custom_access_token.sql",
-        "supabase/rls_policies.sql",
-        "supabase/trigger_on_score_write.sql",
+        "supabase/migrations/00000000000000_bootstrap.sql",
+        "supabase/reference/schema.sql",
+        "supabase/reference/hook_custom_access_token.sql",
+        "supabase/reference/rls_policies.sql",
+        "supabase/reference/trigger_on_score_write.sql",
         "supabase/edge-functions/chat-with-ai/index.ts",
         "supabase/edge-functions/manage-user/index.ts",
         ".env.local (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)"
