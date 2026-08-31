@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-export type SaveStatus = 'saved' | 'saving' | 'error'
+export type SaveStatus = 'saved' | 'saving' | 'pending' | 'error'
 
 interface SaveStatusIndicatorProps {
   status: SaveStatus
@@ -9,8 +9,9 @@ interface SaveStatusIndicatorProps {
 }
 
 const STYLE: Record<SaveStatus, { icon: string; color: string; bg: string; spin?: boolean }> = {
-  saved:  { icon: 'cloud_done',  color: 'var(--success)', bg: 'var(--success-light)' },
-  saving: { icon: 'cloud_sync',  color: 'var(--primary)', bg: 'var(--primary-light)', spin: true },
+  saved:   { icon: 'cloud_done',  color: 'var(--success)', bg: 'var(--success-light)' },
+  saving:  { icon: 'cloud_sync',  color: 'var(--primary)', bg: 'var(--primary-light)', spin: true },
+  pending: { icon: 'schedule',    color: 'var(--warning)', bg: 'var(--warning-light)' },
   error:  { icon: 'cloud_off',   color: 'var(--danger)',  bg: 'var(--danger-light)' },
 }
 

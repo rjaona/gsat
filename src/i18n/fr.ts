@@ -250,7 +250,7 @@ export const fr = {
     sectionExtension: 'Pour aller plus loin — n’entre pas dans le score',
     brancheRevision: 'Révision demandée : validée → en cours',
     ficheReparation: 'Fiche de préparation',
-    reseau: { saved: 'Enregistré', saving: 'Envoi…', error: 'Échec', retry: 'Réessayer' },
+    reseau: { saved: 'Enregistré', saving: 'Envoi…', pending: 'En attente…', error: 'Échec', retry: 'Réessayer' },
     erpDonnees: 'Données ERPTEM au {{date}} : {{valeur}}',
     guide: "Guide d'interprétation",
     progression: 'Progression',

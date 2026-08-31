@@ -23,12 +23,11 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
   const navigate = useNavigate();
   const referentiel = useReferentielStore(s => s.referentiel());
   const campagneMode = useEvaluationStore(s => s.campagneMode);
-  const loadingScore = useEvaluationStore(s => s.loadingScore);
   const storeError = useEvaluationStore(s => s.error);
-  // Indicateur réseau permanent (mesure 5) dérivé de l'état d'écriture par note.
-  const saveStatus: SaveStatus = storeError
-    ? 'error'
-    : Object.values(loadingScore).some(Boolean) ? 'saving' : 'saved';
+  const scoreWriterStatus = useEvaluationStore(s => s.scoreWriterStatus);
+  const flushPendingScores = useEvaluationStore(s => s.flushPendingScores);
+  // Indicateur réseau permanent (mesure 5) dérivé du writer debouncé.
+  const saveStatus: SaveStatus = storeError ? 'error' : scoreWriterStatus === 'idle' ? 'saved' : scoreWriterStatus;
 
   // Souscrit en temps réel à l'évaluation — indispensable pour alimenter le store
   useEvaluationDetail(evalId);
@@ -65,6 +64,13 @@ export function EvaluationForm({ evalId }: EvaluationFormProps) {
     void getErpSnapshotCourant(orgId).then(s => { if (alive) setErpSnapshot(s); }).catch(() => { /* pas d'ERP */ });
     return () => { alive = false; };
   }, [evaluation?.orgId]);
+
+  // Flush les écritures debouncées en attente avant fermeture de l'onglet.
+  useEffect(() => {
+    const handleBeforeUnload = () => { void flushPendingScores(); };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [flushPendingScores]);
 
   // Calcul du score global et par dimension en temps réel
   const scoreResult = useMemo(

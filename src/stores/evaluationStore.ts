@@ -20,6 +20,19 @@ import {
   type ModeCampagne,
 } from '@/services/scoring';
 import type { ValeurScore } from '@/components/evaluation/ScorePicker';
+import { createDebouncedScoreWriter } from '@/utils/debouncedScoreWriter';
+
+// ── Score Writer singleton ─────────────────────────────────────────────────────
+// Un seul writer pour toute l'app (keyed par critereCode).
+let _scoreWriter: ReturnType<typeof createDebouncedScoreWriter> | null = null;
+
+function getScoreWriter(onError: (err: Error) => void, onStatus: (s: 'idle' | 'pending' | 'saving' | 'saved' | 'error') => void) {
+  if (!_scoreWriter) {
+    _scoreWriter = createDebouncedScoreWriter(writeScore, onError);
+    _scoreWriter.onStatusChange(onStatus);
+  }
+  return _scoreWriter;
+}
 
 // ── Types internes ────────────────────────────────────────────────────────────
 
@@ -61,6 +74,8 @@ interface EvaluationState {
   loading: boolean;
   loadingScore: Record<string, boolean>;
   error: string | null;
+  /** Statut de l'écrivain de score debouncé — 'idle'|'pending'|'saving'|'saved'|'error'. */
+  scoreWriterStatus: 'idle' | 'pending' | 'saving' | 'saved' | 'error';
 
   // ── Abonnements ──────────────────────────────────────────────────────────
   subscribeToEvaluation: (evalId: string) => () => void;
@@ -72,6 +87,7 @@ interface EvaluationState {
   updateStatut: (statut: EvaluationStatut, options?: UpdateStatutOptions) => Promise<void>;
   saveScore: (score: ScoreInput, updatedBy: string) => Promise<void>;
   clearEvaluation: () => void;
+  flushPendingScores: () => Promise<void>;
 
   // ── Selectors ─────────────────────────────────────────────────────────────
   getScore: (critereCode: string) => Score | undefined;
@@ -111,6 +127,7 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
   loading: false,
   loadingScore: {},
   error: null,
+  scoreWriterStatus: 'idle' as const,
 
   subscribeToEvaluation: (evalId: string) => {
     set({ loading: true, error: null });
@@ -212,46 +229,40 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
     const { evaluation } = get();
     if (!evaluation) throw new Error('Aucune évaluation chargée');
 
-    set(state => ({
-      loadingScore: { ...state.loadingScore, [score.critereCode]: true },
-    }));
-    try {
-      await writeScore(evaluation.id, score, updatedBy);
-      set(state => {
-        const newScores = { ...state.scores };
-        // Miroir de writeScore : note undefined sans commentaire = ligne supprimée.
-        if (score.note === undefined && !score.commentaire) {
-          delete newScores[score.critereCode];
-        } else {
-          newScores[score.critereCode] = {
-            critereCode: score.critereCode,
-            note: score.note ?? null,
-            ...(score.commentaire !== undefined ? { commentaire: score.commentaire } : {}),
-            updatedBy,
-            updatedAt: new Date().toISOString(),
-          };
-        }
-        const ref = state.referentielCourant;
-        return {
-          scores: newScores,
-          // Recalcul optimiste mode-aware (N/A compte) ; la souscription confirmera.
-          nbCriteresRenseignes: ref
-            ? calculerAvancement(scoresToMap(newScores), ref, state.campagneMode).repondus
-            : state.nbCriteresRenseignes,
-          criteresKO: ref ? computeKO(newScores, ref, state.campagneMode) : state.criteresKO,
-          loadingScore: { ...state.loadingScore, [score.critereCode]: false },
+    // Optimistic update local immédiat (avant le debounce réseau).
+    set(state => {
+      const newScores = { ...state.scores };
+      // Miroir de writeScore : note undefined sans commentaire = ligne supprimée.
+      if (score.note === undefined && !score.commentaire) {
+        delete newScores[score.critereCode];
+      } else {
+        newScores[score.critereCode] = {
+          critereCode: score.critereCode,
+          note: score.note ?? null,
+          ...(score.commentaire !== undefined ? { commentaire: score.commentaire } : {}),
+          updatedBy,
+          updatedAt: new Date().toISOString(),
         };
-      });
-    } catch (err) {
-      set(state => ({
-        error: (err as Error).message,
-        loadingScore: { ...state.loadingScore, [score.critereCode]: false },
-      }));
-      throw err;
-    }
+      }
+      const ref = state.referentielCourant;
+      return {
+        scores: newScores,
+        // Recalcul optimiste mode-aware (N/A compte) ; la souscription confirmera.
+        nbCriteresRenseignes: ref
+          ? calculerAvancement(scoresToMap(newScores), ref, state.campagneMode).repondus
+          : state.nbCriteresRenseignes,
+        criteresKO: ref ? computeKO(newScores, ref, state.campagneMode) : state.criteresKO,
+      };
+    });
+
+    // Debounce l'écriture réseau (800ms) — réduit la charge trigger sur 33 Faritany.
+    const writer = getScoreWriter(err => set({ error: err.message }), s => set({ scoreWriterStatus: s }));
+    writer.schedule(evaluation.id, score, updatedBy);
   },
 
-  clearEvaluation: () =>
+  clearEvaluation: () => {
+    // Flush les écritures en attente avant de quitter l'évaluation.
+    void _scoreWriter?.flush();
     set({
       evaluation: null,
       scores: {},
@@ -263,7 +274,12 @@ export const useEvaluationStore = create<EvaluationState>((set, get) => ({
       loading: false,
       loadingScore: {},
       error: null,
-    }),
+    });
+  },
+
+  flushPendingScores: async () => {
+    await _scoreWriter?.flush();
+  },
 
   getScore: (critereCode: string) => get().scores[critereCode],
 
