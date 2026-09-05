@@ -9,9 +9,9 @@ ANON=$(grep -rhoE 'eyJhbGciOiJIUzI1Ni[A-Za-z0-9_.-]+' /var/www/gsat-frontend/ass
 [ -n "$ANON" ] || { echo "ANON introuvable"; exit 2; }
 RESP=$(curl -s "$BASE/auth/v1/token?grant_type=password" -H "apikey: $ANON" -H "Content-Type: application/json" \
        -d "{\"email\":\"$EMAIL\",\"password\":\"$PW\"}")
-JWT=$(echo "$RESP" | jq -r .access_token); UID=$(echo "$RESP" | jq -r .user.id)
-{ [ "$JWT" != "null" ] && [ -n "$JWT" ] && [ "$UID" != "null" ]; } || { echo "LOGIN FAIL $EMAIL : $(echo "$RESP"|jq -r .error_description // .msg // .)"; exit 1; }
-echo "login OK $EMAIL (uid=$UID)"
+JWT=$(echo "$RESP" | jq -r .access_token); USERID=$(echo "$RESP" | jq -r .user.id)
+{ [ "$JWT" != "null" ] && [ -n "$JWT" ] && [ "$USERID" != "null" ]; } || { echo "LOGIN FAIL $EMAIL : $(echo "$RESP"|jq -r .error_description // .msg // .)"; exit 1; }
+echo "login OK $EMAIL (uid=$USERID)"
 IFS=',' read -ra PAIRS <<< "$CODES"
 ok=0; skip=0; fail=0
 for p in "${PAIRS[@]}"; do
@@ -21,7 +21,7 @@ for p in "${PAIRS[@]}"; do
   http=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/rest/v1/evaluation_scores" \
      -H "apikey: $ANON" -H "Authorization: Bearer $JWT" -H "Content-Type: application/json" \
      -H "Prefer: resolution=merge-duplicates" \
-     -d "{\"eval_id\":\"$EVAL\",\"critere_code\":\"$code\",\"note\":$note,\"updated_by\":\"$UID\"}")
+     -d "{\"eval_id\":\"$EVAL\",\"critere_code\":\"$code\",\"note\":$note,\"updated_by\":\"$USERID\"}")
   echo "  $code=$val -> $http"
   case "$http" in 20*) ok=$((ok+1));; *) fail=$((fail+1));; esac
 done
