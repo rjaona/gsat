@@ -28,10 +28,10 @@ export const usePilotageRegionalStore = create<PilotageRegionalState>((set) => (
       const today = new Date().toISOString().slice(0, 10);
       const [stats, plans] = await Promise.all([
         getDashboardStats(orgId),
-        listPlansByOrg(orgId).catch(() => []),
+        listPlansByOrg(orgId),
       ]);
       const planRecent = [...plans].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-      const actions: Action[] = planRecent ? await listActions(planRecent.id).catch(() => []) : [];
+      const actions: Action[] = planRecent ? await listActions(planRecent.id) : [];
 
       const koItems: PrioriteItem[] = (stats?.criteresEssentielsKO ?? []).map(code => ({
         kind: 'essentiel_ko', code, libelle: code,

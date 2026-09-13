@@ -24,11 +24,21 @@ vi.mock('@/services/planActionService', async () => ({
 }));
 
 import { PilotageRegionalPage } from '@/pages/dashboard/PilotageRegionalPage';
+import { getDashboardStats } from '@/services/dashboardService';
+import { listPlansByOrg } from '@/services/planActionService';
 
 describe('PilotageRegionalPage (dégradation)', () => {
   beforeEach(() => vi.clearAllMocks());
   it('non évalué → message dédié', async () => {
     render(<MemoryRouter><PilotageRegionalPage /></MemoryRouter>);
     await waitFor(() => expect(screen.getByText(/Aucune évaluation en cours/)).toBeInTheDocument());
+  });
+
+  it('évalué mais échec réel du chargement des plans → bannière d\'erreur, pas de faux "tout va bien"', async () => {
+    vi.mocked(getDashboardStats).mockResolvedValueOnce({ criteresEssentielsKO: [] } as any);
+    vi.mocked(listPlansByOrg).mockRejectedValueOnce(new Error('boom'));
+    render(<MemoryRouter><PilotageRegionalPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText('boom')).toBeInTheDocument());
+    expect(screen.queryByText(/Aucune priorité en attente/)).not.toBeInTheDocument();
   });
 });
