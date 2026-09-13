@@ -1,3 +1,5 @@
+import type { ActionStatut, ActionPriorite } from '@/types';
+
 export type StatutFaritany = 'non_evalue' | 'rien_demarre' | 'en_souffrance' | 'sous_controle';
 
 export interface FaritanySignals {
@@ -41,4 +43,36 @@ export function bucketiser2x2(rows: FaritanySignals[]): Bucket2x2 {
     else b.sain++;
   }
   return b;
+}
+
+export type PrioriteItem =
+  | { kind: 'essentiel_ko'; code: string; libelle: string }
+  | { kind: 'action'; id: string; titre: string; statut: ActionStatut; dateEcheance: string; priorite: ActionPriorite };
+
+const RANG_PRIORITE: Record<ActionPriorite, number> = { critique: 0, haute: 1, moyenne: 2, basse: 3 };
+
+/** Rang de bloc : KO (0) < action bloquée (1) < action en retard (2). */
+function rangBloc(it: PrioriteItem): number {
+  if (it.kind === 'essentiel_ko') return 0;
+  return it.statut === 'bloque' ? 1 : 2;
+}
+
+/**
+ * Ordonne la file régionale : essentiels KO → actions bloquées → actions en
+ * retard (échéance la plus ancienne d\'abord) ; à bloc égal, priorité la plus
+ * haute d\'abord. Ne filtre pas : l\'appelant ne passe que KO + actions en souffrance.
+ */
+export function ordonnerPrioritesRegionales(items: PrioriteItem[]): PrioriteItem[] {
+  return [...items].sort((a, b) => {
+    const ra = rangBloc(a), rb = rangBloc(b);
+    if (ra !== rb) return ra - rb;
+    if (a.kind === 'action' && b.kind === 'action') {
+      if (a.statut !== 'bloque' && b.statut !== 'bloque') {
+        // deux retards : échéance la plus ancienne d'abord
+        if (a.dateEcheance !== b.dateEcheance) return a.dateEcheance < b.dateEcheance ? -1 : 1;
+      }
+      return RANG_PRIORITE[a.priorite] - RANG_PRIORITE[b.priorite];
+    }
+    return 0;
+  });
 }
