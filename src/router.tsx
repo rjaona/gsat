@@ -25,6 +25,12 @@ const DashboardFaritanyPage = lazy(() =>
 const IndiceDeploiementPage = lazy(() =>
   import('@/pages/dashboard/IndiceDeploiementPage').then(m => ({ default: m.IndiceDeploiementPage }))
 )
+const PilotageNationalPage = lazy(() =>
+  import('@/pages/dashboard/PilotageNationalPage').then(m => ({ default: m.PilotageNationalPage }))
+)
+const PilotageRegionalPage = lazy(() =>
+  import('@/pages/dashboard/PilotageRegionalPage').then(m => ({ default: m.PilotageRegionalPage }))
+)
 const ValidationPage = lazy(() =>
   import('@/pages/evaluation/ValidationPage').then(m => ({ default: m.ValidationPage }))
 )
@@ -113,6 +119,8 @@ const LazyDashboardOsn = withSuspense(DashboardOsnPage)
 const LazyDashboardGlobal = withSuspense(DashboardGlobalPage)
 const LazyDashboardFaritany = withSuspense(DashboardFaritanyPage)
 const LazyIndice = withSuspense(IndiceDeploiementPage)
+const LazyPilotageNational = withSuspense(PilotageNationalPage)
+const LazyPilotageRegional = withSuspense(PilotageRegionalPage)
 const LazyValidation = withSuspense(ValidationPage)
 const LazyEvaluationList = withSuspense(EvaluationListPage)
 const LazyNewEvaluation = withSuspense(NewEvaluationPage)
@@ -164,6 +172,14 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard/indice',
         element: <RoleGuard roles={['admin_global', 'responsable_osn', 'responsable_region']}><LazyIndice /></RoleGuard>,
+      },
+      {
+        path: 'dashboard/pilotage-national',
+        element: <RoleGuard roles={['admin_global', 'responsable_osn', 'responsable_region']}><LazyPilotageNational /></RoleGuard>,
+      },
+      {
+        path: 'dashboard/pilotage-regional',
+        element: <LazyPilotageRegional />,
       },
       {
         path: 'dashboard/global',
