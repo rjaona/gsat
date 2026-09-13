@@ -19,3 +19,26 @@ export function deriverStatutFaritany(s: FaritanySignals): StatutFaritany {
   if (s.actionsRetard > 0 || s.actionsBloque > 0) return 'en_souffrance';
   return 'sous_controle';
 }
+
+export interface Bucket2x2 {
+  appuiUrgent: number;  // sévérité (KO) ET exécution en souffrance
+  conformite: number;   // KO seul (inclut « rien démarré »)
+  execution: number;    // souffrance seule
+  sain: number;         // évalué, ni KO ni souffrance
+  nonEvalue: number;
+}
+
+/** Répartit les Faritany sur 2 axes bruts (sévérité × exécution) ; non évalués à part. */
+export function bucketiser2x2(rows: FaritanySignals[]): Bucket2x2 {
+  const b: Bucket2x2 = { appuiUrgent: 0, conformite: 0, execution: 0, sain: 0, nonEvalue: 0 };
+  for (const r of rows) {
+    if (!r.evalue) { b.nonEvalue++; continue; }
+    const severite = r.essentielsKoCount > 0;
+    const souffrance = r.actionsRetard > 0 || r.actionsBloque > 0;
+    if (severite && souffrance) b.appuiUrgent++;
+    else if (severite) b.conformite++;
+    else if (souffrance) b.execution++;
+    else b.sain++;
+  }
+  return b;
+}
