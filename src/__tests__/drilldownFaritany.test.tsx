@@ -2,7 +2,15 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { DrilldownFaritany } from '@/components/dashboard/pilotage/DrilldownFaritany';
 
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (_k: string, d?: string) => d ?? _k }) }));
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (_k: string, d?: string, opts?: Record<string, unknown>) => {
+      let s = d ?? _k;
+      if (opts) for (const [key, val] of Object.entries(opts)) s = s.split(`{{${key}}}`).join(String(val));
+      return s;
+    },
+  }),
+}));
 
 describe('DrilldownFaritany', () => {
   it('rend null si aucune donnée', () => {
@@ -18,7 +26,6 @@ describe('DrilldownFaritany', () => {
     }} />);
     expect(screen.getByText('Analamanga')).toBeInTheDocument();
     expect(screen.getByText('F401 — Assurance des membres')).toBeInTheDocument();
-    expect(screen.getByText(/4/)).toBeInTheDocument();
-    expect(screen.getByText(/1/)).toBeInTheDocument();
+    expect(screen.getByText('4 en retard · 1 bloquées')).toBeInTheDocument();
   });
 });
