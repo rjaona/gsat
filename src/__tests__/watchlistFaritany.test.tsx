@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { vi } from 'vitest';
 import { WatchlistFaritany, type WatchlistRow } from '@/components/dashboard/pilotage/WatchlistFaritany';
 import type { Organisation } from '@/types';
@@ -26,5 +26,15 @@ describe('WatchlistFaritany', () => {
   it('groupe par province (en-tête Antananarivo présent)', () => {
     render(<WatchlistFaritany rows={rows} />);
     expect(screen.getByText('Antananarivo')).toBeInTheDocument();
+  });
+  it('appelle onSelect avec l\'orgId au clic sur la ligne', () => {
+    const onSelect = vi.fn();
+    render(<WatchlistFaritany rows={rows} onSelect={onSelect} />);
+    fireEvent.click(screen.getByText('Analamanga'));
+    expect(onSelect).toHaveBeenCalledWith('a');
+  });
+  it('utilise niveauLabel comme en-tête de première colonne', () => {
+    render(<WatchlistFaritany rows={rows} niveauLabel="Région" />);
+    expect(screen.getByText('Région')).toBeInTheDocument();
   });
 });
