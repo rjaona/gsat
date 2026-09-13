@@ -27,7 +27,7 @@ const STATUT_STYLE: Record<StatutFaritany, string> = {
   sous_controle: 'bg-[#dcf5d3] text-[#256a1c]',
 };
 
-export function WatchlistFaritany({ rows, niveauLabel, onSelect }: { rows: WatchlistRow[]; niveauLabel?: string; onSelect?: (orgId: string) => void }) {
+export function WatchlistFaritany({ rows, niveauLabel, onSelect }: { rows: WatchlistRow[]; niveauLabel?: string | undefined; onSelect?: ((orgId: string) => void) | undefined }) {
   const { t } = useTranslation();
   const byId = new Map(rows.map(r => [r.org.id, r]));
   const groupes = grouperParProvince(rows.map(r => r.org));
