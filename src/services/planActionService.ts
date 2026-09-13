@@ -300,7 +300,19 @@ export interface OrgActionAgg {
   actionsDone: number;
   actionsEnCours: number;
   actionsBloque: number;
+  actionsRetard: number;   // échéance passée, ni terminée ni bloquée
   latestUpdate: string | null; // ISO8601 du plus récent created_at d'action
+}
+
+/**
+ * Une action est « en retard » si son échéance est passée et qu'elle n'est ni
+ * terminée ni bloquée (les bloquées sont comptées à part pour ne pas double-compter).
+ * `today` et `dateEcheance` comparés sur leur partie date (ISO lexicographique).
+ */
+export function estEnRetard(statut: string, dateEcheance: string | null, today: string): boolean {
+  if (!dateEcheance) return false;
+  if (statut === 'termine' || statut === 'bloque') return false;
+  return dateEcheance.slice(0, 10) < today;
 }
 
 /**
@@ -314,12 +326,12 @@ export async function listActionAggByOrgIds(
   if (orgIds.length === 0) return {};
   const { data, error } = await supabase
     .from('plans_action')
-    .select('org_id, plan_actions(statut, created_at)')
+    .select('org_id, plan_actions(statut, created_at, date_echeance)')
     .in('org_id', orgIds);
   if (error) throw error;
 
   const empty = (): OrgActionAgg => ({
-    actionsTotal: 0, actionsDone: 0, actionsEnCours: 0, actionsBloque: 0, latestUpdate: null,
+    actionsTotal: 0, actionsDone: 0, actionsEnCours: 0, actionsBloque: 0, actionsRetard: 0, latestUpdate: null,
   });
   const byOrg: Record<string, OrgActionAgg> = {};
   for (const id of orgIds) byOrg[id] = empty();
@@ -327,12 +339,14 @@ export async function listActionAggByOrgIds(
   for (const plan of data ?? []) {
     const orgId = plan['org_id'] as string;
     const agg = byOrg[orgId] ?? (byOrg[orgId] = empty());
-    const actions = (plan['plan_actions'] as unknown as { statut: string; created_at: string | null }[]) ?? [];
+    const actions = (plan['plan_actions'] as unknown as { statut: string; created_at: string | null; date_echeance: string | null }[]) ?? [];
+    const today = new Date().toISOString().slice(0, 10);
     for (const a of actions) {
       agg.actionsTotal++;
       if (a.statut === 'termine') agg.actionsDone++;
       else if (a.statut === 'en_cours') agg.actionsEnCours++;
       else if (a.statut === 'bloque') agg.actionsBloque++;
+      if (estEnRetard(a.statut, a.date_echeance, today)) agg.actionsRetard++;
       if (a.created_at && (agg.latestUpdate === null || a.created_at > agg.latestUpdate)) {
         agg.latestUpdate = a.created_at;
       }
