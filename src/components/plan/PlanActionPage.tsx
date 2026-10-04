@@ -9,7 +9,7 @@ import { ActionKanban } from './ActionKanban';
 import { ActionCard } from './ActionCard';
 import { ActionFormModal } from './ActionFormModal';
 import { SuiviTimeline } from './SuiviTimeline';
-import { getPlanByEvalId } from '@/services/planActionService';
+import { getPlanByEvalId, completerPlanCreeParNational } from '@/services/planActionService';
 import type { Action, ActionStatut } from '@/types';
 
 // ── Vue liste compacte ─────────────────────────────────────────────────────────
@@ -285,7 +285,7 @@ export function PlanActionPage() {
   const [resolvingPlan, setResolvingPlan] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
 
-  const { profile, user } = useAuthStore();
+  const { profile, user, orgId } = useAuthStore();
   const { creerDepuisEvaluation, ajouterSuivi } = usePlanActionStore();
 
   useEffect(() => {
@@ -294,6 +294,13 @@ export function PlanActionPage() {
     getPlanByEvalId(evalId)
       .then(async (existing) => {
         if (existing) {
+          if (user) {
+            // Plan créé par le national : pré-remplissage Faritany manquant. Un échec
+            // n'empêche pas l'ouverture (le plan reste utilisable).
+            try {
+              await completerPlanCreeParNational(existing, { id: user.id, orgId: orgId ?? profile?.orgId });
+            } catch { /* ignoré : le plan s'ouvre quand même */ }
+          }
           setPlanId(existing.id);
         } else if (user) {
           const newId = await creerDepuisEvaluation(evalId, user.id);

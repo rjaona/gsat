@@ -419,7 +419,23 @@ export async function createPlanFromEvaluation(
 
   const planId = await createPlan({ evalId, orgId: evaluation.orgId, statut: 'brouillon', createdBy }, createdBy);
 
-  // Scores à 0 → actions pré-remplies
+  // E1: rollback applicatif — si l'insertion des actions échoue, supprimer le plan créé
+  try {
+    await preremplirActionsDepuisEvaluation(planId, evalId);
+  } catch (err) {
+    // Rollback : supprimer le plan vide pour éviter un état corrompu
+    await deletePlan(planId).catch(() => {});
+    throw err;
+  }
+
+  return planId;
+}
+
+/**
+ * Scores à 0 de l'évaluation → actions pré-remplies (origine par défaut = regionale).
+ * Renvoie le nombre d'actions créées. Sans rollback : à la charge de l'appelant.
+ */
+export async function preremplirActionsDepuisEvaluation(planId: string, evalId: string): Promise<number> {
   const { data: scores } = await supabase
     .from('evaluation_scores')
     .select('critere_code')
@@ -428,28 +444,38 @@ export async function createPlanFromEvaluation(
 
   const echeanceDefaut = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
-  // E1: rollback applicatif — si l'insertion des actions échoue, supprimer le plan créé
-  try {
-    await Promise.all(
-      (scores ?? []).map(s =>
-        addAction(planId, {
-          critereCode:          s['critere_code'] as string,
-          domaineAmelioration:  `Critère ${s['critere_code']} — non conforme`,
-          objectif:             `Atteindre la conformité sur le critère ${s['critere_code']}`,
-          description:          '',
-          responsable:          '',
-          dateDebut:            new Date().toISOString(),
-          dateEcheance:         echeanceDefaut,
-          statut:               'a_faire' as ActionStatut,
-          priorite:             'haute'   as ActionPriorite,
-        })
-      )
-    );
-  } catch (err) {
-    // Rollback : supprimer le plan vide pour éviter un état corrompu
-    await deletePlan(planId).catch(() => {});
-    throw err;
-  }
+  const lignes = scores ?? [];
+  await Promise.all(
+    lignes.map(s =>
+      addAction(planId, {
+        critereCode:          s['critere_code'] as string,
+        domaineAmelioration:  `Critère ${s['critere_code']} — non conforme`,
+        objectif:             `Atteindre la conformité sur le critère ${s['critere_code']}`,
+        description:          '',
+        responsable:          '',
+        dateDebut:            new Date().toISOString(),
+        dateEcheance:         echeanceDefaut,
+        statut:               'a_faire' as ActionStatut,
+        priorite:             'haute'   as ActionPriorite,
+      })
+    )
+  );
+  return lignes.length;
+}
 
-  return planId;
+/**
+ * Un plan créé par le national (action d'appui) n'a pas reçu le pré-remplissage
+ * Faritany. À l'ouverture par un utilisateur du Faritany lui-même : si le plan a été
+ * créé par quelqu'un d'autre ET ne contient encore aucune action régionale,
+ * pré-remplir depuis l'évaluation. Renvoie le nombre d'actions ajoutées (0 sinon).
+ */
+export async function completerPlanCreeParNational(
+  plan: PlanAction,
+  user: { id: string; orgId: string | undefined },
+): Promise<number> {
+  if (!user.orgId || user.orgId !== plan.orgId) return 0;
+  if (plan.createdBy === user.id) return 0;
+  const actions = await listActions(plan.id);
+  if (actions.some(a => a.origine !== 'nationale')) return 0;
+  return preremplirActionsDepuisEvaluation(plan.id, plan.evalId);
 }
