@@ -1,4 +1,4 @@
-import type { ActionStatut, ActionPriorite } from '@/types';
+import type { ActionStatut, ActionPriorite, ActionOrigine, UserRole } from '@/types';
 
 export type StatutFaritany = 'non_evalue' | 'rien_demarre' | 'en_souffrance' | 'sous_controle';
 
@@ -47,7 +47,7 @@ export function bucketiser2x2(rows: FaritanySignals[]): Bucket2x2 {
 
 export type PrioriteItem =
   | { kind: 'essentiel_ko'; code: string; libelle: string }
-  | { kind: 'action'; id: string; titre: string; statut: ActionStatut; dateEcheance: string; priorite: ActionPriorite };
+  | { kind: 'action'; id: string; titre: string; statut: ActionStatut; dateEcheance: string; priorite: ActionPriorite; origine?: ActionOrigine | undefined };
 
 const RANG_PRIORITE: Record<ActionPriorite, number> = { critique: 0, haute: 1, moyenne: 2, basse: 3 };
 
@@ -75,4 +75,57 @@ export function ordonnerPrioritesRegionales(items: PrioriteItem[]): PrioriteItem
     }
     return 0;
   });
+}
+
+/**
+ * Plan « courant » d'un Faritany = le plus récent par createdAt. Règle UNIQUE :
+ * le cockpit régional LIT ce plan, le national ÉCRIT ses actions d'appui dedans
+ * — sinon une action d'appui atterrirait dans un plan que la région ne voit pas.
+ */
+export function choisirPlanCourant<T extends { id: string; createdAt: string }>(plans: T[]): T | undefined {
+  return [...plans].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+}
+
+export type CiblePlan =
+  | { kind: 'plan'; planId: string }
+  | { kind: 'creer'; evalId: string }
+  | { kind: 'impossible' };
+
+/**
+ * Où déposer une action d'appui : plan courant s'il existe ; sinon créer un plan
+ * sur la dernière évaluation (plans_action.eval_id est NOT NULL UNIQUE) ;
+ * sinon impossible (Faritany jamais évalué).
+ */
+export function choisirCiblePlan(plans: { id: string; createdAt: string }[], derniereEvalId: string | null): CiblePlan {
+  const courant = choisirPlanCourant(plans);
+  if (courant) return { kind: 'plan', planId: courant.id };
+  if (derniereEvalId) return { kind: 'creer', evalId: derniereEvalId };
+  return { kind: 'impossible' };
+}
+
+/**
+ * OSN dont le cockpit national affiche les Faritany. Un compte OSN pilote son org ;
+ * admin_global (rattaché à la racine OMMS en prod) prend la première OSN visible ;
+ * responsable_region prend l'OSN enfant de sa région. null = rien de pilotable.
+ */
+export function resoudreOsnPilotage(
+  ctx: { role: UserRole | undefined; orgId: string | undefined; orgType: string | undefined },
+  osns: { id: string; parentId?: string | undefined }[],
+): string | null {
+  if (!ctx.orgId) return null;
+  if (ctx.orgType === 'OSN') return ctx.orgId;
+  if (ctx.role === 'admin_global') return osns[0]?.id ?? null;
+  if (ctx.role === 'responsable_region') return osns.find(o => o.parentId === ctx.orgId)?.id ?? null;
+  return null;
+}
+
+/** code critère → libellé fr (repli sur le code si libellé vide). */
+export function indexerLibellesCriteres(
+  ref: { dimensions: { criteres: { code: string; libelle: { fr: string } }[] }[] } | null,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const d of ref?.dimensions ?? []) {
+    for (const c of d.criteres) out[c.code] = c.libelle.fr || c.code;
+  }
+  return out;
 }

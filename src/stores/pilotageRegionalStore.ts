@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { getDashboardStats } from '@/services/dashboardService';
 import { listPlansByOrg, listActions, estEnRetard } from '@/services/planActionService';
-import { ordonnerPrioritesRegionales, type PrioriteItem } from '@/utils/pilotage';
+import { ordonnerPrioritesRegionales, choisirPlanCourant, type PrioriteItem } from '@/utils/pilotage';
 import type { Action } from '@/types';
 
 interface PilotageRegionalState {
@@ -30,7 +30,7 @@ export const usePilotageRegionalStore = create<PilotageRegionalState>((set) => (
         getDashboardStats(orgId),
         listPlansByOrg(orgId),
       ]);
-      const planRecent = [...plans].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      const planRecent = choisirPlanCourant(plans);
       const actions: Action[] = planRecent ? await listActions(planRecent.id) : [];
 
       const koItems: PrioriteItem[] = (stats?.criteresEssentielsKO ?? []).map(code => ({
