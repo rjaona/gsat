@@ -2511,6 +2511,12 @@ ssh -i ~/.ssh/id_ed25519 root@76.13.37.209 "docker exec -i supabase_db_gsat psql
 ```
 Attendu : `plans_select/plans_insert/plans_update` + `pactions_select/pactions_write` présents ; `appui = NULL`, `col_origine = 0`. Tout écart → STOP, rapporter.
 
+Puis (policies lisant le claim `role` + fixture du script de vérif) :
+```bash
+ssh -i ~/.ssh/id_ed25519 root@76.13.37.209 "docker exec -i supabase_db_gsat psql -U postgres -d postgres -c \"select tablename, policyname from pg_policies where tablename in ('evaluations','organisations','plans_action','plan_actions','users') and (coalesce(qual,'') ~ '''role''' or coalesce(with_check,'') ~ '''role''');\" -c \"select version, actif from referentiel_versions where version='far_v1_0';\""
+```
+Attendu : 1re requête = 0 ligne (aucune policy ne lit le claim `role` ; sinon STOP — les sous-requêtes EXISTS des nouvelles policies échoueraient) ; 2e = 1 ligne (fixture du script de vérif).
+
 - [ ] **Step 4 : Appliquer la migration**
 ```bash
 cat supabase/migrations/20261004_pilotage_appui.sql | ssh -i ~/.ssh/id_ed25519 root@76.13.37.209 "docker exec -i supabase_db_gsat psql -U postgres -d postgres -v ON_ERROR_STOP=1"
@@ -2550,3 +2556,7 @@ curl -s https://gsat.tily-digital.com/ | grep -o 'index-[A-Za-z0-9_-]*\.js'   # 
 - Divergence Phase 1.5 : l'agrégat national (`listActionAggByOrgIds`) somme TOUS les plans, le régional lit le plan courant. Sans impact au pilote (1 cycle → 1 plan par Faritany) ; l'ÉCRITURE Phase 2 suit déjà la règle du plan courant. À aligner avant le 2e cycle.
 - `responsable_region` n'atteint que les enfants directs (portée héritée des policies existantes).
 - Liste des référents vide pour un Faritany : normal (aucun compte `responsable_osn` en prod à ce jour → seul l'admin est proposé).
+- Compteur national multi-plans : voir « Divergence Phase 1.5 » ci-dessus (agrégat tous plans vs plan courant).
+- Badge « National » visible seulement sur les actions en souffrance côté régional.
+- `choisirPlanCourant` peut cibler un plan clos (le plus récent par `createdAt`, sans filtre de statut) : une action d'appui peut atterrir dans un plan `cloture`.
+- `responsable_region` : cockpit national = vue vide + erreur RLS brute à la capture.
