@@ -78,6 +78,7 @@ export function PilotageNationalPage() {
       <DrilldownFaritany data={drilldown} onClose={() => setSelection(null)}>
         {selection && drilldown && (
           <CaptureAppui
+            key={selection}
             appui={appuis[selection] ?? null}
             referents={referents}
             essentielsKO={drilldown.essentielsKO}

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -64,5 +64,20 @@ describe('PilotageNationalPage', () => {
     render(<PilotageNationalPage />);
     await waitFor(() => expect(screen.getByText('Analamanga')).toBeInTheDocument());
     expect(listOrganisations).toHaveBeenCalledWith('ASN', 'osn-1');
+  });
+
+  it('changer de Faritany dans le drill-down réinitialise le brouillon de capture', async () => {
+    vi.mocked(listOrganisations).mockImplementation(async (type) => (type === 'OSN'
+      ? [{ id: 'osn-1', nom: 'TEM', type: 'OSN', actif: true, poids: 1 }]
+      : [...FAR, { id: 'f2', code: 'ANT-02', nom: 'Bongolava', type: 'ASN', actif: true, poids: 1 }]) as never);
+    render(<PilotageNationalPage />);
+    await waitFor(() => expect(screen.getByText('Analamanga')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Analamanga'));
+    const noteA = await screen.findByLabelText('Note');
+    fireEvent.change(noteA, { target: { value: 'brouillon A' } });
+    expect(screen.getByLabelText('Note')).toHaveValue('brouillon A');
+    fireEvent.click(screen.getAllByText('Bongolava')[0]!);
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Bongolava' })).toBeInTheDocument());
+    expect(screen.getByLabelText('Note')).toHaveValue('');
   });
 });
