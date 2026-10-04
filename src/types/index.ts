@@ -212,6 +212,22 @@ export interface PlanAction {
   createdAt: string;
 }
 
+/** Qui a créé l'action : le Faritany lui-même ou le national (action d'appui). */
+export type ActionOrigine = 'regionale' | 'nationale';
+export type AppuiStatut = 'ouvert' | 'clos';
+
+/** État de l'appui national à un Faritany (un seul ouvert à la fois). */
+export interface AppuiFaritany {
+  id: string;
+  orgId: string;
+  statut: AppuiStatut;
+  referentUserId?: string | undefined;
+  note?: string | undefined;
+  ouvertAt: string;
+  ouvertPar?: string | undefined;
+  closAt?: string | undefined;
+}
+
 export interface Action {
   id: string;
   planId: string;
@@ -227,6 +243,8 @@ export interface Action {
   kpis?: string | undefined;
   statut: ActionStatut;
   priorite: ActionPriorite;
+  /** Toujours renseigné à la lecture (défaut 'regionale'). Optionnel pour les payloads existants. */
+  origine?: ActionOrigine | undefined;
   createdAt: string;
 }
 

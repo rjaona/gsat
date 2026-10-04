@@ -251,6 +251,64 @@ export type Database = {
           },
         ]
       }
+      appui_faritany: {
+        Row: {
+          clos_at: string | null
+          id: string
+          note: string | null
+          org_id: string
+          ouvert_at: string
+          ouvert_par: string | null
+          referent_user_id: string | null
+          statut: Database["public"]["Enums"]["appui_statut"]
+          updated_at: string
+        }
+        Insert: {
+          clos_at?: string | null
+          id?: string
+          note?: string | null
+          org_id: string
+          ouvert_at?: string
+          ouvert_par?: string | null
+          referent_user_id?: string | null
+          statut?: Database["public"]["Enums"]["appui_statut"]
+          updated_at?: string
+        }
+        Update: {
+          clos_at?: string | null
+          id?: string
+          note?: string | null
+          org_id?: string
+          ouvert_at?: string
+          ouvert_par?: string | null
+          referent_user_id?: string | null
+          statut?: Database["public"]["Enums"]["appui_statut"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appui_faritany_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appui_faritany_ouvert_par_fkey"
+            columns: ["ouvert_par"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appui_faritany_referent_user_id_fkey"
+            columns: ["referent_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: Database["public"]["Enums"]["audit_action"]
@@ -977,6 +1035,7 @@ export type Database = {
           id: string
           kpis: string | null
           objectif: string
+          origine: Database["public"]["Enums"]["action_origine"]
           plan_id: string
           priorite: Database["public"]["Enums"]["action_priorite"]
           responsable: string
@@ -995,6 +1054,7 @@ export type Database = {
           id?: string
           kpis?: string | null
           objectif: string
+          origine?: Database["public"]["Enums"]["action_origine"]
           plan_id: string
           priorite?: Database["public"]["Enums"]["action_priorite"]
           responsable?: string
@@ -1013,6 +1073,7 @@ export type Database = {
           id?: string
           kpis?: string | null
           objectif?: string
+          origine?: Database["public"]["Enums"]["action_origine"]
           plan_id?: string
           priorite?: Database["public"]["Enums"]["action_priorite"]
           responsable?: string
@@ -1349,6 +1410,7 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
+      action_origine: "regionale" | "nationale"
       action_priorite: "basse" | "moyenne" | "haute" | "critique"
       action_statut: "a_faire" | "en_cours" | "termine" | "bloque"
       alerte_severite: "info" | "vigilance" | "critique"
@@ -1359,6 +1421,7 @@ export type Database = {
         | "incoherence"
         | "echeance"
         | "inactivite"
+      appui_statut: "ouvert" | "clos"
       audit_action:
         | "create"
         | "update"
@@ -1542,6 +1605,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      action_origine: ["regionale", "nationale"],
       action_priorite: ["basse", "moyenne", "haute", "critique"],
       action_statut: ["a_faire", "en_cours", "termine", "bloque"],
       alerte_severite: ["info", "vigilance", "critique"],
@@ -1553,6 +1617,7 @@ export const Constants = {
         "echeance",
         "inactivite",
       ],
+      appui_statut: ["ouvert", "clos"],
       audit_action: [
         "create",
         "update",
