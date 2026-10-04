@@ -5,6 +5,7 @@ import { usePilotageNationalStore } from '@/stores/pilotageNationalStore';
 import { Grille2x2 } from '@/components/dashboard/pilotage/Grille2x2';
 import { WatchlistFaritany } from '@/components/dashboard/pilotage/WatchlistFaritany';
 import { KpiStrip, type KpiItem } from '@/components/dashboard/KpiStrip';
+import { CaptureAppui } from '@/components/dashboard/pilotage/CaptureAppui';
 import { DrilldownFaritany, type DrilldownData } from '@/components/dashboard/pilotage/DrilldownFaritany';
 
 export function PilotageNationalPage() {
@@ -12,7 +13,8 @@ export function PilotageNationalPage() {
   const role = useAuthStore(s => s.role);
   const orgId = useAuthStore(s => s.orgId);
   const orgType = useAuthStore(s => s.orgType);
-  const { rows, statsById, buckets, niveauLabel, nbEvalues, nbActionsNationalesEnCours, libellesKo, loading, error, loadPourUtilisateur, reset } = usePilotageNationalStore();
+  const userId = useAuthStore(s => s.user?.id);
+  const { rows, statsById, buckets, niveauLabel, nbEvalues, nbActionsNationalesEnCours, libellesKo, loading, error, loadPourUtilisateur, reset, appuis, referents, detail, captureBusy, captureError, chargerDetail, ouvrirAppui, majAppui, cloreAppui, creerActionAppui } = usePilotageNationalStore();
   const [selection, setSelection] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,6 +22,10 @@ export function PilotageNationalPage() {
     void loadPourUtilisateur({ role, orgId, orgType });
     return reset;
   }, [role, orgId, orgType, loadPourUtilisateur, reset]);
+
+  useEffect(() => {
+    if (selection) void chargerDetail(selection);
+  }, [selection, chargerDetail]);
 
   const drilldown: DrilldownData | null = useMemo(() => {
     if (!selection) return null;
@@ -30,8 +36,10 @@ export function PilotageNationalPage() {
       essentielsKO: (statsById[selection]?.criteresEssentielsKO ?? []).map(code => ({ code, libelle: libellesKo[code] ?? code })),
       actionsRetard: r.actionsRetard,
       actionsBloque: r.actionsBloque,
+      actionsSouffrance: detail?.orgId === selection ? detail.actionsSouffrance : undefined,
+      actionsNationales: detail?.orgId === selection ? detail.actionsNationales : undefined,
     };
-  }, [selection, rows, statsById, libellesKo]);
+  }, [selection, rows, statsById, libellesKo, detail]);
 
   return (
     <div className="space-y-6">
@@ -67,7 +75,22 @@ export function PilotageNationalPage() {
         )}
       </section>
 
-      <DrilldownFaritany data={drilldown} onClose={() => setSelection(null)} />
+      <DrilldownFaritany data={drilldown} onClose={() => setSelection(null)}>
+        {selection && drilldown && (
+          <CaptureAppui
+            appui={appuis[selection] ?? null}
+            referents={referents}
+            essentielsKO={drilldown.essentielsKO}
+            peutCreerAction={detail?.orgId === selection ? detail.peutCreerAction && !!userId : null}
+            busy={captureBusy}
+            error={captureError}
+            onOuvrir={input => void ouvrirAppui(selection, input)}
+            onMettreAJour={input => void majAppui(selection, input)}
+            onClore={() => void cloreAppui(selection)}
+            onCreerAction={form => (userId ? creerActionAppui(selection, form, userId) : Promise.resolve(false))}
+          />
+        )}
+      </DrilldownFaritany>
     </div>
   );
 }

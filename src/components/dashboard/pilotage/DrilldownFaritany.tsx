@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ActionOrigine, ActionStatut } from '@/types';
 
@@ -14,9 +15,27 @@ export interface DrilldownData {
   essentielsKO: { code: string; libelle: string }[];
   actionsRetard: number;
   actionsBloque: number;
+  actionsSouffrance?: DrilldownAction[] | undefined;
+  actionsNationales?: DrilldownAction[] | undefined;
 }
 
-export function DrilldownFaritany({ data, onClose }: { data: DrilldownData | null; onClose: () => void }) {
+function ListeActions({ actions }: { actions: DrilldownAction[] }) {
+  const { t } = useTranslation();
+  return (
+    <ul className="space-y-1.5 mt-2">
+      {actions.map(a => (
+        <li key={a.id} className="flex items-center justify-between gap-2 text-sm">
+          <span className="text-[#171c22]">{a.titre}</span>
+          <span className="text-xs text-[#767682] shrink-0">
+            {t('pages.pilotageNational.echeance', 'Échéance {{date}}', { date: a.dateEcheance.slice(0, 10) })}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function DrilldownFaritany({ data, onClose, children }: { data: DrilldownData | null; onClose: () => void; children?: ReactNode }) {
   const { t } = useTranslation();
   if (!data) return null;
   return (
@@ -49,10 +68,17 @@ export function DrilldownFaritany({ data, onClose }: { data: DrilldownData | nul
           <p className="text-sm text-[#171c22]">
             {t('pages.pilotageNational.drillResume', '{{retard}} en retard · {{bloque}} bloquées', { retard: data.actionsRetard, bloque: data.actionsBloque })}
           </p>
-          <p className="text-xs italic text-[#767682] mt-1">
-            {t('pages.pilotageNational.drillPhase2', 'Détail par action et déclenchement de l’appui : Phase 2.')}
-          </p>
+          {data.actionsSouffrance && data.actionsSouffrance.length > 0 && <ListeActions actions={data.actionsSouffrance} />}
         </section>
+        <section>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#15236e] mb-2">
+            {t('pages.pilotageNational.drillNationales', 'Actions d’appui nationales')}
+          </h4>
+          {data.actionsNationales && data.actionsNationales.length > 0
+            ? <ListeActions actions={data.actionsNationales} />
+            : <p className="text-sm text-[#767682]">{t('pages.pilotageNational.drillAucuneNationale', 'Aucune action d’appui.')}</p>}
+        </section>
+        {children}
       </div>
     </aside>
   );

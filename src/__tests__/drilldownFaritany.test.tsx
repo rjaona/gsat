@@ -28,4 +28,16 @@ describe('DrilldownFaritany', () => {
     expect(screen.getByText('F401 — Assurance des membres')).toBeInTheDocument();
     expect(screen.getByText('4 en retard · 1 bloquées')).toBeInTheDocument();
   });
+  it('liste les actions en souffrance et les actions nationales avec échéance', () => {
+    render(<DrilldownFaritany onClose={() => {}} data={{
+      nom: 'Analamanga', essentielsKO: [], actionsRetard: 1, actionsBloque: 0,
+      actionsSouffrance: [{ id: 'a1', titre: 'Recenser les unités', statut: 'a_faire', dateEcheance: '2026-09-01T00:00:00Z', origine: 'regionale' }],
+      actionsNationales: [{ id: 'a2', titre: 'Former le trésorier', statut: 'en_cours', dateEcheance: '2026-12-01T00:00:00Z', origine: 'nationale' }],
+    }}><p>zone capture</p></DrilldownFaritany>);
+    expect(screen.getByText('Recenser les unités')).toBeInTheDocument();
+    expect(screen.getByText('Échéance 2026-09-01')).toBeInTheDocument();
+    expect(screen.getByText('Former le trésorier')).toBeInTheDocument();
+    expect(screen.getByText('zone capture')).toBeInTheDocument();
+    expect(screen.queryByText(/Phase 2/)).toBeNull();
+  });
 });
