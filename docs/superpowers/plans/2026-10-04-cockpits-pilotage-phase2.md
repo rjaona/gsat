@@ -32,7 +32,7 @@
 1. **Le national crée une action alors que le Faritany a déjà un ou plusieurs plans** → l'action doit atterrir dans le plan que le cockpit régional lit (le plus récent par `createdAt`), sinon la boucle d'appui est silencieusement cassée. Couvert : Task 3 (`choisirCiblePlan`, plusieurs plans) + Task 4 (`creerActionAppui` n'appelle PAS `createPlan` si un plan existe).
 2. **Faritany sans aucune évaluation** (`plans_action.eval_id NOT NULL`) → création d'action impossible : bouton remplacé par un message honnête, pas d'erreur SQL. Couvert : Task 3 (`impossible`), Task 4 (`CreationActionImpossibleError`), Task 7 (RTL message).
 3. **Double « Marquer en appui »** (deux onglets / double clic) → l'index unique partiel lève 23505 ; l'utilisateur voit « Un appui est déjà ouvert pour ce Faritany. », pas une erreur brute. Couvert : Task 1 (SQL [9]), Task 4 (mapping 23505).
-4. **Un compte Faritany tente de fabriquer/retirer le tag `nationale`** (via `pactions_write`, FOR ALL, sans contrainte d'origine) → le trigger de garde rejette. Couvert : Task 1 (statique + SQL [16][17]).
+4. **Un compte Faritany tente de fabriquer/retirer le tag `nationale`** (via `pactions_write`, FOR ALL, sans contrainte d'origine) → le trigger de garde rejette INSERT et UPDATE. Couvert : Task 1 (statique + SQL [16][17]). ⚠️ NON couvert : la SUPPRESSION d'une action nationale par le Faritany (`pactions_write` FOR ALL autorise DELETE, trigger = INSERT/UPDATE seulement) — décision utilisateur en attente (étendre la garde à DELETE, ou accepter et tracer en dette).
 5. **`admin_global` dont l'`org_id` est la racine OMMS** (cas réel prod : seul compte national) → le cockpit national doit résoudre l'OSN au lieu d'afficher 0 Faritany. Couvert : Task 3 (`resoudreOsnPilotage`) + Task 5 (store, test admin).
 
 ---
@@ -2531,6 +2531,7 @@ curl -s https://gsat.tily-digital.com/ | grep -o 'index-[A-Za-z0-9_-]*\.js'   # 
 ## Hors périmètre / dette tracée
 
 - Notification au Faritany à la création d'une action nationale (spec §9, optionnelle).
+- Suppression d'une action `nationale` par le Faritany : possible via `pactions_write` (FOR ALL) tant que la garde ne couvre pas DELETE — voir Review Focus #4.
 - `pactions_update_descendant` borné aux actions `nationale` : le national ne modifie pas les actions propres du Faritany (lecture de la spec §5 « INSERT/UPDATE descendant » resserrée — à confirmer à la relecture du plan).
 - Divergence Phase 1.5 : l'agrégat national (`listActionAggByOrgIds`) somme TOUS les plans, le régional lit le plan courant. Sans impact au pilote (1 cycle → 1 plan par Faritany) ; l'ÉCRITURE Phase 2 suit déjà la règle du plan courant. À aligner avant le 2e cycle.
 - `responsable_region` n'atteint que les enfants directs (portée héritée des policies existantes).
