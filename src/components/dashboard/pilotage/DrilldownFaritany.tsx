@@ -1,4 +1,13 @@
 import { useTranslation } from 'react-i18next';
+import type { ActionOrigine, ActionStatut } from '@/types';
+
+export interface DrilldownAction {
+  id: string;
+  titre: string;
+  statut: ActionStatut;
+  dateEcheance: string;
+  origine: ActionOrigine;
+}
 
 export interface DrilldownData {
   nom: string;

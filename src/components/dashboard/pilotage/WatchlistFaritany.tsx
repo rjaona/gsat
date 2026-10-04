@@ -11,6 +11,7 @@ export interface WatchlistRow {
   actionsTotal: number;
   actionsRetard: number;
   actionsBloque: number;
+  enAppui?: boolean | undefined;
 }
 
 const STATUT_LABEL: Record<StatutFaritany, string> = {
