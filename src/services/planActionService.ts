@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { PlanAction, PlanStatut, Action, ActionStatut, ActionPriorite, Suivi } from '@/types';
+import type { PlanAction, PlanStatut, Action, ActionStatut, ActionPriorite, ActionOrigine, Suivi } from '@/types';
 import type { Database } from '@/types/supabase.generated';
 import { getEvaluation } from './evaluationService';
 import { createNotification } from './notificationService';
@@ -39,6 +39,7 @@ function rowToAction(row: Record<string, unknown>): Action {
     dateEcheance:        row['date_echeance']        as string,
     statut:              row['statut']               as ActionStatut,
     priorite:            row['priorite']             as ActionPriorite,
+    origine:             (row['origine'] as ActionOrigine | null | undefined) ?? 'regionale',
     createdAt:           row['created_at']           as string,
     ...(critereCode           != null ? { critereCode }           : {}),
     ...(dateDebut             != null ? { dateDebut }             : {}),
@@ -167,6 +168,7 @@ export async function addAction(
       kpis:                  payload.kpis                  ?? null,
       statut:                payload.statut,
       priorite:              payload.priorite,
+      origine:               payload.origine ?? 'regionale',
     })
     .select('id')
     .single();
@@ -300,7 +302,20 @@ export interface OrgActionAgg {
   actionsDone: number;
   actionsEnCours: number;
   actionsBloque: number;
+  actionsRetard: number;   // échéance passée, ni terminée ni bloquée
+  actionsNationalesEnCours: number; // origine 'nationale' et statut ≠ termine (actions d'appui actives)
   latestUpdate: string | null; // ISO8601 du plus récent created_at d'action
+}
+
+/**
+ * Une action est « en retard » si son échéance est passée et qu'elle n'est ni
+ * terminée ni bloquée (les bloquées sont comptées à part pour ne pas double-compter).
+ * `today` et `dateEcheance` comparés sur leur partie date (ISO lexicographique).
+ */
+export function estEnRetard(statut: string, dateEcheance: string | null, today: string): boolean {
+  if (!dateEcheance) return false;
+  if (statut === 'termine' || statut === 'bloque') return false;
+  return dateEcheance.slice(0, 10) < today;
 }
 
 /**
@@ -314,12 +329,12 @@ export async function listActionAggByOrgIds(
   if (orgIds.length === 0) return {};
   const { data, error } = await supabase
     .from('plans_action')
-    .select('org_id, plan_actions(statut, created_at)')
+    .select('org_id, plan_actions(statut, created_at, date_echeance, origine)')
     .in('org_id', orgIds);
   if (error) throw error;
 
   const empty = (): OrgActionAgg => ({
-    actionsTotal: 0, actionsDone: 0, actionsEnCours: 0, actionsBloque: 0, latestUpdate: null,
+    actionsTotal: 0, actionsDone: 0, actionsEnCours: 0, actionsBloque: 0, actionsRetard: 0, actionsNationalesEnCours: 0, latestUpdate: null,
   });
   const byOrg: Record<string, OrgActionAgg> = {};
   for (const id of orgIds) byOrg[id] = empty();
@@ -327,12 +342,15 @@ export async function listActionAggByOrgIds(
   for (const plan of data ?? []) {
     const orgId = plan['org_id'] as string;
     const agg = byOrg[orgId] ?? (byOrg[orgId] = empty());
-    const actions = (plan['plan_actions'] as unknown as { statut: string; created_at: string | null }[]) ?? [];
+    const actions = (plan['plan_actions'] as unknown as { statut: string; created_at: string | null; date_echeance: string | null; origine?: string | null }[]) ?? [];
+    const today = new Date().toISOString().slice(0, 10);
     for (const a of actions) {
       agg.actionsTotal++;
       if (a.statut === 'termine') agg.actionsDone++;
       else if (a.statut === 'en_cours') agg.actionsEnCours++;
       else if (a.statut === 'bloque') agg.actionsBloque++;
+      if (estEnRetard(a.statut, a.date_echeance, today)) agg.actionsRetard++;
+      if (a.origine === 'nationale' && a.statut !== 'termine') agg.actionsNationalesEnCours++;
       if (a.created_at && (agg.latestUpdate === null || a.created_at > agg.latestUpdate)) {
         agg.latestUpdate = a.created_at;
       }
@@ -401,7 +419,23 @@ export async function createPlanFromEvaluation(
 
   const planId = await createPlan({ evalId, orgId: evaluation.orgId, statut: 'brouillon', createdBy }, createdBy);
 
-  // Scores à 0 → actions pré-remplies
+  // E1: rollback applicatif — si l'insertion des actions échoue, supprimer le plan créé
+  try {
+    await preremplirActionsDepuisEvaluation(planId, evalId);
+  } catch (err) {
+    // Rollback : supprimer le plan vide pour éviter un état corrompu
+    await deletePlan(planId).catch(() => {});
+    throw err;
+  }
+
+  return planId;
+}
+
+/**
+ * Scores à 0 de l'évaluation → actions pré-remplies (origine par défaut = regionale).
+ * Renvoie le nombre d'actions créées. Sans rollback : à la charge de l'appelant.
+ */
+export async function preremplirActionsDepuisEvaluation(planId: string, evalId: string): Promise<number> {
   const { data: scores } = await supabase
     .from('evaluation_scores')
     .select('critere_code')
@@ -410,28 +444,38 @@ export async function createPlanFromEvaluation(
 
   const echeanceDefaut = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
 
-  // E1: rollback applicatif — si l'insertion des actions échoue, supprimer le plan créé
-  try {
-    await Promise.all(
-      (scores ?? []).map(s =>
-        addAction(planId, {
-          critereCode:          s['critere_code'] as string,
-          domaineAmelioration:  `Critère ${s['critere_code']} — non conforme`,
-          objectif:             `Atteindre la conformité sur le critère ${s['critere_code']}`,
-          description:          '',
-          responsable:          '',
-          dateDebut:            new Date().toISOString(),
-          dateEcheance:         echeanceDefaut,
-          statut:               'a_faire' as ActionStatut,
-          priorite:             'haute'   as ActionPriorite,
-        })
-      )
-    );
-  } catch (err) {
-    // Rollback : supprimer le plan vide pour éviter un état corrompu
-    await deletePlan(planId).catch(() => {});
-    throw err;
-  }
+  const lignes = scores ?? [];
+  await Promise.all(
+    lignes.map(s =>
+      addAction(planId, {
+        critereCode:          s['critere_code'] as string,
+        domaineAmelioration:  `Critère ${s['critere_code']} — non conforme`,
+        objectif:             `Atteindre la conformité sur le critère ${s['critere_code']}`,
+        description:          '',
+        responsable:          '',
+        dateDebut:            new Date().toISOString(),
+        dateEcheance:         echeanceDefaut,
+        statut:               'a_faire' as ActionStatut,
+        priorite:             'haute'   as ActionPriorite,
+      })
+    )
+  );
+  return lignes.length;
+}
 
-  return planId;
+/**
+ * Un plan créé par le national (action d'appui) n'a pas reçu le pré-remplissage
+ * Faritany. À l'ouverture par un utilisateur du Faritany lui-même : si le plan a été
+ * créé par quelqu'un d'autre ET ne contient encore aucune action régionale,
+ * pré-remplir depuis l'évaluation. Renvoie le nombre d'actions ajoutées (0 sinon).
+ */
+export async function completerPlanCreeParNational(
+  plan: PlanAction,
+  user: { id: string; orgId: string | undefined },
+): Promise<number> {
+  if (!user.orgId || user.orgId !== plan.orgId) return 0;
+  if (plan.createdBy === user.id) return 0;
+  const actions = await listActions(plan.id);
+  if (actions.some(a => a.origine !== 'nationale')) return 0;
+  return preremplirActionsDepuisEvaluation(plan.id, plan.evalId);
 }

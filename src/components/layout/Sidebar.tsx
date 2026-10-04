@@ -32,6 +32,11 @@ const ADMIN_ITEMS: NavItem[] = [
   { to: '/admin/audit',          icon: 'history',         labelKey: 'nav.auditLog',       roles: ['admin_global', 'responsable_region'] },
 ]
 
+const PILOTAGE_ITEMS: NavItem[] = [
+  { to: '/dashboard/pilotage-regional', icon: 'flag', labelKey: 'nav.pilotageRegional' },
+  { to: '/dashboard/pilotage-national', icon: 'hub',  labelKey: 'nav.pilotageNational', roles: ['admin_global', 'responsable_osn', 'responsable_region'] },
+]
+
 const AI_ITEMS: NavItem[] = [
   { to: '/ai-assistant', icon: 'auto_awesome', labelKey: 'nav.aiAssistant' },
 ]
@@ -106,6 +111,10 @@ export function Sidebar() {
     item => !item.roles || (role && item.roles.includes(role))
   )
 
+  const visiblePilotageItems = PILOTAGE_ITEMS.filter(
+    item => !item.roles || (role && item.roles.includes(role))
+  )
+
   return (
     <aside className="h-screen w-64 fixed left-0 top-0 bg-surface-container-low flex flex-col p-3 pt-20 z-40 border-r border-outline-variant/20">
       {/* Brand block */}
@@ -157,6 +166,18 @@ export function Sidebar() {
 
             <SectionLabel>{t('nav.groupAdmin')}</SectionLabel>
             {visibleAdminItems.map((item) => (
+              <SideNavLink key={item.to} item={item} />
+            ))}
+          </>
+        )}
+
+        {visiblePilotageItems.length > 0 && (
+          <>
+            <div className="my-3 mx-4" aria-hidden="true">
+              <div className="h-px bg-gradient-to-r from-transparent via-wosm-purple-muted to-transparent" />
+            </div>
+            <SectionLabel>{t('nav.groupPilotage')}</SectionLabel>
+            {visiblePilotageItems.map((item) => (
               <SideNavLink key={item.to} item={item} />
             ))}
           </>

@@ -12,7 +12,7 @@ import { useSearchParams } from 'react-router-dom';
 import { usePlanDetail, useActions, usePlanActionStats } from '@/hooks/usePlanAction';
 import { usePlanActionStore } from '@/stores/planActionStore';
 import { useAuthStore } from '@/stores/authStore';
-import { getPlanByEvalId } from '@/services/planActionService';
+import { getPlanByEvalId, completerPlanCreeParNational } from '@/services/planActionService';
 import { ActionFormModal } from '@/components/plan/ActionFormModal';
 import { SuiviTimeline } from '@/components/plan/SuiviTimeline';
 import type { Action, ActionStatut } from '@/types';
@@ -139,7 +139,7 @@ export function TrackingPage() {
   const [planId, setPlanId] = useState<string | null>(planIdParam);
   const [resolvingPlan, setResolvingPlan] = useState(false);
 
-  const { profile, user, role } = useAuthStore();
+  const { profile, user, role, orgId } = useAuthStore();
   const { creerDepuisEvaluation, ajouterSuivi } = usePlanActionStore();
 
   const canWrite = role !== 'lecteur';
@@ -153,6 +153,13 @@ export function TrackingPage() {
     getPlanByEvalId(evalId)
       .then(async (existing) => {
         if (existing) {
+          if (user) {
+            // Plan créé par le national : pré-remplissage Faritany manquant. Un échec
+            // n'empêche pas l'ouverture (le plan reste utilisable).
+            try {
+              await completerPlanCreeParNational(existing, { id: user.id, orgId: orgId ?? profile?.orgId });
+            } catch { /* ignoré : le plan s'ouvre quand même */ }
+          }
           setPlanId(existing.id);
         } else if (user) {
           const newId = await creerDepuisEvaluation(evalId, user.id);

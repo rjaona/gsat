@@ -29,12 +29,14 @@ describe('listActionAggByOrgIds (audit M7)', () => {
     ];
     const r = await listActionAggByOrgIds(['A', 'B']);
     expect(r['A']).toEqual({
-      actionsTotal: 3, actionsDone: 1, actionsEnCours: 1, actionsBloque: 1,
+      actionsTotal: 3, actionsDone: 1, actionsEnCours: 1, actionsBloque: 1, actionsRetard: 0,
+      actionsNationalesEnCours: 0,
       latestUpdate: '2026-03-01T00:00:00Z',
     });
     // org sans plan → compteurs à 0, présent dans la map
     expect(r['B']).toEqual({
-      actionsTotal: 0, actionsDone: 0, actionsEnCours: 0, actionsBloque: 0,
+      actionsTotal: 0, actionsDone: 0, actionsEnCours: 0, actionsBloque: 0, actionsRetard: 0,
+      actionsNationalesEnCours: 0,
       latestUpdate: null,
     });
   });
@@ -51,5 +53,16 @@ describe('listActionAggByOrgIds (audit M7)', () => {
     const r = await listActionAggByOrgIds(['A']);
     expect(r['A']?.actionsTotal).toBe(2);
     expect(r['A']?.latestUpdate).toBe('2026-05-01T00:00:00Z');
+  });
+
+  it('compte les actions nationales non terminées (actionsNationalesEnCours)', async () => {
+    h.rows = [{ org_id: 'A', plan_actions: [
+      { statut: 'en_cours', created_at: null, date_echeance: null, origine: 'nationale' },
+      { statut: 'termine',  created_at: null, date_echeance: null, origine: 'nationale' },
+      { statut: 'a_faire',  created_at: null, date_echeance: null, origine: 'regionale' },
+      { statut: 'bloque',   created_at: null, date_echeance: null, origine: 'nationale' },
+    ] }];
+    const r = await listActionAggByOrgIds(['A']);
+    expect(r['A']?.actionsNationalesEnCours).toBe(2);
   });
 });
