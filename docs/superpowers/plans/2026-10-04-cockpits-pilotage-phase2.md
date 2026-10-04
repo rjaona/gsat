@@ -32,7 +32,7 @@
 1. **Le national crée une action alors que le Faritany a déjà un ou plusieurs plans** → l'action doit atterrir dans le plan que le cockpit régional lit (le plus récent par `createdAt`), sinon la boucle d'appui est silencieusement cassée. Couvert : Task 3 (`choisirCiblePlan`, plusieurs plans) + Task 4 (`creerActionAppui` n'appelle PAS `createPlan` si un plan existe).
 2. **Faritany sans aucune évaluation** (`plans_action.eval_id NOT NULL`) → création d'action impossible : bouton remplacé par un message honnête, pas d'erreur SQL. Couvert : Task 3 (`impossible`), Task 4 (`CreationActionImpossibleError`), Task 7 (RTL message).
 3. **Double « Marquer en appui »** (deux onglets / double clic) → l'index unique partiel lève 23505 ; l'utilisateur voit « Un appui est déjà ouvert pour ce Faritany. », pas une erreur brute. Couvert : Task 1 (SQL [9]), Task 4 (mapping 23505).
-4. **Un compte Faritany tente de fabriquer/retirer le tag `nationale`** (via `pactions_write`, FOR ALL, sans contrainte d'origine) → le trigger de garde rejette INSERT et UPDATE. Couvert : Task 1 (statique + SQL [16][17]). ⚠️ NON couvert : la SUPPRESSION d'une action nationale par le Faritany (`pactions_write` FOR ALL autorise DELETE, trigger = INSERT/UPDATE seulement) — décision utilisateur en attente (étendre la garde à DELETE, ou accepter et tracer en dette).
+4. **Un compte Faritany tente de fabriquer/retirer le tag `nationale`** (via `pactions_write`, FOR ALL, sans contrainte d'origine) ou à SUPPRIMER une action nationale → le trigger de garde rejette (INSERT, UPDATE, DELETE ; décision user 2026-10-04 : garde étendue à DELETE). Couvert : Task 1 (statique + SQL [16][17][17b]).
 5. **`admin_global` dont l'`org_id` est la racine OMMS** (cas réel prod : seul compte national) → le cockpit national doit résoudre l'OSN au lieu d'afficher 0 Faritany. Couvert : Task 3 (`resoudreOsnPilotage`) + Task 5 (store, test admin).
 
 ---
@@ -133,10 +133,11 @@ describe('migration 20261004_pilotage_appui', () => {
     expect(extractPolicy('pactions_update_descendant')).toMatch(/WITH CHECK/);
   });
 
-  it('garde origine : immuable en UPDATE, nationale réservée au national en INSERT', () => {
+  it('garde origine : immuable en UPDATE, nationale réservée au national en INSERT et DELETE', () => {
     expect(sql).toMatch(/NEW\.origine IS DISTINCT FROM OLD\.origine/);
     expect(sql).toMatch(/v_role NOT IN \('admin_global', 'responsable_osn', 'responsable_region'\)/);
-    expect(sql).toMatch(/CREATE TRIGGER garde_origine_action\s+BEFORE INSERT OR UPDATE ON plan_actions/);
+    expect(sql).toMatch(/IF TG_OP = 'DELETE' THEN[\s\S]*OLD\.origine = 'nationale'[\s\S]*RETURN OLD;/);
+    expect(sql).toMatch(/CREATE TRIGGER garde_origine_action\s+BEFORE INSERT OR UPDATE OR DELETE ON plan_actions/);
   });
 });
 ```
@@ -165,8 +166,8 @@ Créer `supabase/migrations/20261004_pilotage_appui.sql` :
 --    pactions_insert_descendant, pactions_update_descendant. Le national ne
 --    crée/modifie QUE des actions origine='nationale' ; les actions du
 --    Faritany restent à lui.
--- 6. Garde fn_garde_origine_action : origine immuable ; 'nationale' réservée
---    au niveau national. Nécessaire car pactions_write (FOR ALL, own org) ne
+-- 6. Garde fn_garde_origine_action : origine immuable ; création ET suppression
+--    d'une action 'nationale' réservées au niveau national. Nécessaire car pactions_write (FOR ALL, own org) ne
 --    contraint pas l'origine et les policies permissives sont OR-ées : seule
 --    une garde trigger empêche un Faritany de fabriquer/retirer le badge.
 --
@@ -340,10 +341,19 @@ LANGUAGE plpgsql
 AS $$
 DECLARE v_role TEXT := auth.jwt() ->> 'user_role';
 BEGIN
+  -- v_role NULL = pas de JWT applicatif (superuser, service_role, seeds) : autorisé.
+  IF TG_OP = 'DELETE' THEN
+    -- Un Faritany ne peut pas effacer une action d'appui nationale (pactions_write
+    -- est FOR ALL) : sinon badge, compteur et boucle d'appui disparaissent.
+    IF OLD.origine = 'nationale' AND v_role IS NOT NULL
+       AND v_role NOT IN ('admin_global', 'responsable_osn', 'responsable_region') THEN
+      RAISE EXCEPTION 'Seul le niveau national peut supprimer une action d''appui nationale.';
+    END IF;
+    RETURN OLD;
+  END IF;
   IF TG_OP = 'UPDATE' AND NEW.origine IS DISTINCT FROM OLD.origine THEN
     RAISE EXCEPTION 'L''origine d''une action est immuable.';
   END IF;
-  -- v_role NULL = pas de JWT applicatif (superuser, service_role, seeds) : autorisé.
   IF TG_OP = 'INSERT' AND NEW.origine = 'nationale' AND v_role IS NOT NULL
      AND v_role NOT IN ('admin_global', 'responsable_osn', 'responsable_region') THEN
     RAISE EXCEPTION 'Seul le niveau national peut créer une action d''appui nationale.';
@@ -354,7 +364,7 @@ $$;
 
 DROP TRIGGER IF EXISTS garde_origine_action ON plan_actions;
 CREATE TRIGGER garde_origine_action
-  BEFORE INSERT OR UPDATE ON plan_actions
+  BEFORE INSERT OR UPDATE OR DELETE ON plan_actions
   FOR EACH ROW EXECUTE FUNCTION fn_garde_origine_action();
 
 COMMIT;
@@ -519,6 +529,11 @@ rollback to savepoint t;
 savepoint t;
 \echo '[17] FarA2 retire le tag national de l action d appui — ATTENDU: ERROR origine immuable'
 update plan_actions set origine = 'regionale' where id = 'a99e0000-0000-4000-8000-000000000051';
+rollback to savepoint t;
+
+savepoint t;
+\echo '[17b] FarA2 supprime l action d appui nationale — ATTENDU: ERROR Seul le niveau national peut supprimer'
+delete from plan_actions where id = 'a99e0000-0000-4000-8000-000000000051';
 rollback to savepoint t;
 
 \echo '[18] FarA2 voit l action nationale (badge) — ATTENDU: n=1'
@@ -2510,7 +2525,7 @@ Attendu : 6 policies, 1 trigger, toutes les actions existantes en `regionale`.
 ```bash
 cat docs/superpowers/verif/appui-rls.sql | ssh -i ~/.ssh/id_ed25519 root@76.13.37.209 "docker exec -i supabase_db_gsat psql -U postgres -d postgres -v ON_ERROR_STOP=0"
 ```
-Attendu : [1..19] conformes à leurs lignes « ATTENDU » ; dernière ligne `ROLLBACK`. Puis prouver qu'aucune fixture ne reste :
+Attendu : [1..19] (+ [17b]) conformes à leurs lignes « ATTENDU » ; dernière ligne `ROLLBACK`. Puis prouver qu'aucune fixture ne reste :
 `... psql -c "select count(*) from organisations where id::text like 'a99e0000%';"` → `0`.
 
 - [ ] **Step 6 : Frontend**
@@ -2531,7 +2546,6 @@ curl -s https://gsat.tily-digital.com/ | grep -o 'index-[A-Za-z0-9_-]*\.js'   # 
 ## Hors périmètre / dette tracée
 
 - Notification au Faritany à la création d'une action nationale (spec §9, optionnelle).
-- Suppression d'une action `nationale` par le Faritany : possible via `pactions_write` (FOR ALL) tant que la garde ne couvre pas DELETE — voir Review Focus #4.
 - `pactions_update_descendant` borné aux actions `nationale` : le national ne modifie pas les actions propres du Faritany (lecture de la spec §5 « INSERT/UPDATE descendant » resserrée — à confirmer à la relecture du plan).
 - Divergence Phase 1.5 : l'agrégat national (`listActionAggByOrgIds`) somme TOUS les plans, le régional lit le plan courant. Sans impact au pilote (1 cycle → 1 plan par Faritany) ; l'ÉCRITURE Phase 2 suit déjà la règle du plan courant. À aligner avant le 2e cycle.
 - `responsable_region` n'atteint que les enfants directs (portée héritée des policies existantes).
