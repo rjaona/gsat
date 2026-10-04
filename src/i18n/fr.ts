@@ -136,7 +136,7 @@ export const fr = {
       clore: 'Clore l’appui',
       marquer: 'Marquer en appui',
       actionTitre: 'Créer une action d’appui',
-      actionImpossible: 'Aucune évaluation : impossible de créer une action d’appui.',
+      actionImpossible: 'Aucune évaluation validée : impossible de créer une action d’appui.',
       objectif: 'Objectif',
       domaine: 'Domaine d’amélioration',
       echeanceLabel: 'Échéance',

@@ -15,7 +15,7 @@ import {
   type ActionAppuiForm,
 } from '@/services/appuiService';
 import {
-  deriverStatutFaritany, bucketiser2x2, choisirCiblePlan, choisirPlanCourant, resoudreOsnPilotage, indexerLibellesCriteres,
+  deriverStatutFaritany, bucketiser2x2, choisirCiblePlan, choisirPlanCourant, derniereEvalValidee, resoudreOsnPilotage, indexerLibellesCriteres,
   type Bucket2x2, type FaritanySignals,
 } from '@/utils/pilotage';
 import type { WatchlistRow } from '@/components/dashboard/pilotage/WatchlistFaritany';
@@ -88,7 +88,8 @@ export const usePilotageNationalStore = create<PilotageNationalState>((set, get)
       await op();
       const osnId = get().osnId;
       if (osnId) await get().load(osnId);
-      await get().chargerDetail(orgId);
+      // Ne recharger le détail que si ce Faritany est toujours sélectionné.
+      if (get().detailOrgId === orgId) await get().chargerDetail(orgId);
       return true;
     } catch (err) {
       set({ captureError: (err as Error).message });
@@ -194,7 +195,7 @@ export const usePilotageNationalStore = create<PilotageNationalState>((set, get)
             orgId,
             actionsSouffrance: actions.filter(a => a.statut === 'bloque' || estEnRetard(a.statut, a.dateEcheance, today)).map(versDetail),
             actionsNationales: actions.filter(a => a.origine === 'nationale').map(versDetail),
-            peutCreerAction: choisirCiblePlan(plans, evals[0]?.id ?? null).kind !== 'impossible',
+            peutCreerAction: choisirCiblePlan(plans, derniereEvalValidee(evals)).kind !== 'impossible',
           },
         });
       } catch (err) {

@@ -136,7 +136,7 @@ export const en = {
       clore: 'Close support',
       marquer: 'Mark as supported',
       actionTitre: 'Create a support action',
-      actionImpossible: 'No evaluation: a support action cannot be created.',
+      actionImpossible: 'No validated evaluation: a support action cannot be created.',
       objectif: 'Objective',
       domaine: 'Improvement area',
       echeanceLabel: 'Due date',

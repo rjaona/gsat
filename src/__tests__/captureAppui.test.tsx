@@ -45,7 +45,7 @@ describe('CaptureAppui', () => {
 
   it('Faritany jamais évalué : message honnête, pas de formulaire', () => {
     render(<CaptureAppui {...props({ peutCreerAction: false })} />);
-    expect(screen.getByText('Aucune évaluation : impossible de créer une action d’appui.')).toBeInTheDocument();
+    expect(screen.getByText('Aucune évaluation validée : impossible de créer une action d’appui.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Créer l’action d’appui' })).toBeNull();
   });
 

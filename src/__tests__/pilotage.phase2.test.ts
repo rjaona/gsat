@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { choisirPlanCourant, choisirCiblePlan, resoudreOsnPilotage, indexerLibellesCriteres } from '@/utils/pilotage';
+import { choisirPlanCourant, choisirCiblePlan, resoudreOsnPilotage, indexerLibellesCriteres, derniereEvalValidee } from '@/utils/pilotage';
 
 const p = (id: string, createdAt: string) => ({ id, createdAt });
 
@@ -54,5 +54,20 @@ describe('indexerLibellesCriteres', () => {
   });
   it('référentiel absent → {}', () => {
     expect(indexerLibellesCriteres(null)).toEqual({});
+  });
+});
+
+describe('derniereEvalValidee', () => {
+  it('liste vide → null', () => {
+    expect(derniereEvalValidee([])).toBeNull();
+  });
+  it('seulement en_cours / brouillon → null', () => {
+    expect(derniereEvalValidee([{ id: 'e1', statut: 'en_cours' }, { id: 'e0', statut: 'brouillon' }])).toBeNull();
+  });
+  it('[en_cours récente, validee ancienne] → la validee', () => {
+    expect(derniereEvalValidee([{ id: 'recente', statut: 'en_cours' }, { id: 'ancienne', statut: 'validee' }])).toBe('ancienne');
+  });
+  it('cloturee acceptée (la plus récente exploitable)', () => {
+    expect(derniereEvalValidee([{ id: 'c', statut: 'cloturee' }, { id: 'v', statut: 'validee' }])).toBe('c');
   });
 });

@@ -104,6 +104,30 @@ describe('pilotageNationalStore — Phase 2', () => {
     expect(usePilotageNationalStore.getState().detail?.peutCreerAction).toBe(false);
   });
 
+  it('chargerDetail : sans plan, seule une éval en_cours → peutCreerAction false ; une validee → true', async () => {
+    vi.mocked(listPlansByOrg).mockResolvedValue([]);
+    vi.mocked(listEvaluationsByOrg).mockResolvedValue([{ id: 'e-cours', statut: 'en_cours' } as never]);
+    await usePilotageNationalStore.getState().chargerDetail('1');
+    expect(usePilotageNationalStore.getState().detail?.peutCreerAction).toBe(false);
+
+    vi.mocked(listEvaluationsByOrg).mockResolvedValue([{ id: 'e-cours', statut: 'en_cours' } as never, { id: 'e-val', statut: 'validee' } as never]);
+    await usePilotageNationalStore.getState().chargerDetail('1');
+    expect(usePilotageNationalStore.getState().detail?.peutCreerAction).toBe(true);
+  });
+
+  it('capture sur 1 pendant que la sélection passe à 2 → le détail reste celui de 2', async () => {
+    await usePilotageNationalStore.getState().load('osn-mg');
+    await usePilotageNationalStore.getState().chargerDetail('1');
+    vi.mocked(ouvrirAppui).mockImplementation(async () => {
+      await usePilotageNationalStore.getState().chargerDetail('2');
+      return { id: 'ap2', orgId: '1', statut: 'ouvert', ouvertAt: '2026-10-04' };
+    });
+    const ok = await usePilotageNationalStore.getState().ouvrirAppui('1', {});
+    expect(ok).toBe(true);
+    expect(usePilotageNationalStore.getState().detailOrgId).toBe('2');
+    expect(usePilotageNationalStore.getState().detail?.orgId).toBe('2');
+  });
+
   it('ouvrirAppui en conflit → captureError lisible, false', async () => {
     await usePilotageNationalStore.getState().load('osn-mg');
     vi.mocked(ouvrirAppui).mockRejectedValue(new Error('Un appui est déjà ouvert pour ce Faritany.'));
@@ -115,6 +139,8 @@ describe('pilotageNationalStore — Phase 2', () => {
 
   it('creerActionAppui → appelle le service puis recharge cockpit + détail', async () => {
     await usePilotageNationalStore.getState().load('osn-mg');
+    await usePilotageNationalStore.getState().chargerDetail('1'); // Faritany sélectionné
+    vi.mocked(listPlansByOrg).mockClear();
     vi.mocked(creerActionAppui).mockResolvedValue('a-new');
     const form = { objectif: 'O', domaineAmelioration: 'D', dateEcheance: '2026-12-01', priorite: 'haute' as const, responsable: '' };
     const ok = await usePilotageNationalStore.getState().creerActionAppui('1', form, 'u-osn');

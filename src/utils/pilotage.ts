@@ -96,6 +96,11 @@ export type CiblePlan =
  * sur la dernière évaluation (plans_action.eval_id est NOT NULL UNIQUE) ;
  * sinon impossible (Faritany jamais évalué).
  */
+/** Dernière évaluation exploitable pour un plan d'action (même règle que createPlanFromEvaluation). */
+export function derniereEvalValidee(evals: { id: string; statut: string }[]): string | null {
+  return evals.find(e => e.statut === 'validee' || e.statut === 'cloturee')?.id ?? null;
+}
+
 export function choisirCiblePlan(plans: { id: string; createdAt: string }[], derniereEvalId: string | null): CiblePlan {
   const courant = choisirPlanCourant(plans);
   if (courant) return { kind: 'plan', planId: courant.id };

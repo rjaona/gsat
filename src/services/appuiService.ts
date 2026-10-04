@@ -2,7 +2,7 @@ import { supabase } from './supabase';
 import type { AppuiFaritany, AppuiStatut, ActionPriorite } from '@/types';
 import { listPlansByOrg, createPlan, addAction } from './planActionService';
 import { listEvaluationsByOrg } from './evaluationService';
-import { choisirCiblePlan } from '@/utils/pilotage';
+import { choisirCiblePlan, derniereEvalValidee } from '@/utils/pilotage';
 
 // Requêtes à plat, SANS embed : appui_faritany a deux FK vers users
 // (referent_user_id, ouvert_par) → un embed PostgREST serait ambigu (400).
@@ -12,7 +12,7 @@ export class AppuiDejaOuvertError extends Error {
 }
 
 export class CreationActionImpossibleError extends Error {
-  constructor() { super('Aucune évaluation : impossible de créer une action d’appui.'); this.name = 'CreationActionImpossibleError'; }
+  constructor() { super('Aucune évaluation validée : impossible de créer une action d’appui.'); this.name = 'CreationActionImpossibleError'; }
 }
 
 export interface AppuiInput {
@@ -95,7 +95,13 @@ export async function mettreAJourAppui(appuiId: string, input: AppuiInput): Prom
   const patch: { referent_user_id?: string | null; note?: string | null } = {};
   if (input.referentUserId !== undefined) patch.referent_user_id = input.referentUserId;
   if (input.note           !== undefined) patch.note             = input.note;
-  const { data, error } = await supabase.from('appui_faritany').update(patch).eq('id', appuiId).select('id');
+  if (Object.keys(patch).length === 0) return;
+  const { data, error } = await supabase
+    .from('appui_faritany')
+    .update(patch)
+    .eq('id', appuiId)
+    .eq('statut', 'ouvert')
+    .select('id');
   if (error) throw error;
   // 0 ligne = RLS a filtré (échec silencieux sinon) — patron updateStatutEvaluation.
   if (!data || data.length === 0) throw new Error('Appui introuvable ou non modifiable.');
@@ -106,6 +112,7 @@ export async function cloreAppui(appuiId: string): Promise<void> {
     .from('appui_faritany')
     .update({ statut: 'clos', clos_at: new Date().toISOString() })
     .eq('id', appuiId)
+    .eq('statut', 'ouvert')
     .select('id');
   if (error) throw error;
   if (!data || data.length === 0) throw new Error('Appui introuvable ou non modifiable.');
@@ -114,11 +121,11 @@ export async function cloreAppui(appuiId: string): Promise<void> {
 /**
  * Crée une action d'appui (origine 'nationale') dans le plan COURANT du Faritany
  * — celui que lit le cockpit régional. Sans plan : en crée un sur la dernière
- * évaluation. Sans évaluation : CreationActionImpossibleError.
+ * évaluation VALIDÉE (validee|cloturee). Sans évaluation validée : CreationActionImpossibleError.
  */
 export async function creerActionAppui(orgId: string, form: ActionAppuiForm, userId: string): Promise<string> {
   const [plans, evals] = await Promise.all([listPlansByOrg(orgId), listEvaluationsByOrg(orgId)]);
-  const cible = choisirCiblePlan(plans, evals[0]?.id ?? null);
+  const cible = choisirCiblePlan(plans, derniereEvalValidee(evals));
   if (cible.kind === 'impossible') throw new CreationActionImpossibleError();
   const planId = cible.kind === 'plan'
     ? cible.planId

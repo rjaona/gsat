@@ -92,7 +92,7 @@ export function CaptureAppui(p: CaptureAppuiProps) {
         {p.peutCreerAction === null ? (
           <p className="text-sm text-[#767682]">{t('common.chargement', 'Chargement…')}</p>
         ) : !p.peutCreerAction ? (
-          <p className="text-sm text-[#767682]">{t('pages.pilotageNational.actionImpossible', 'Aucune évaluation : impossible de créer une action d’appui.')}</p>
+          <p className="text-sm text-[#767682]">{t('pages.pilotageNational.actionImpossible', 'Aucune évaluation validée : impossible de créer une action d’appui.')}</p>
         ) : (
           <>
             <div>
