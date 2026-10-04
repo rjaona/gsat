@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { vi } from 'vitest';
 import { WatchlistFaritany, type WatchlistRow } from '@/components/dashboard/pilotage/WatchlistFaritany';
 import type { Organisation } from '@/types';
@@ -36,5 +36,18 @@ describe('WatchlistFaritany', () => {
   it('utilise niveauLabel comme en-tête de première colonne', () => {
     render(<WatchlistFaritany rows={rows} niveauLabel="Région" />);
     expect(screen.getByText('Région')).toBeInTheDocument();
+  });
+
+  it('colonne Appui : chip « En appui » pour un Faritany appuyé, tiret sinon', () => {
+    const org = (id: string, code: string) => ({ id, nom: `Far ${id}`, code, type: 'ASN' as const, actif: true, poids: 1 });
+    render(<WatchlistFaritany rows={[
+      { org: org('1', 'ANT-01'), statut: 'en_souffrance', essentielsKoCount: 1, actionsTotal: 2, actionsRetard: 1, actionsBloque: 0, enAppui: true },
+      { org: org('2', 'ANT-02'), statut: 'sous_controle', essentielsKoCount: 0, actionsTotal: 1, actionsRetard: 0, actionsBloque: 0 },
+    ]} />);
+    expect(screen.getByText('Appui')).toBeInTheDocument();
+    const ligne1 = screen.getByText('Far 1').closest('tr')!;
+    const ligne2 = screen.getByText('Far 2').closest('tr')!;
+    expect(within(ligne1).getByText('En appui')).toBeInTheDocument();
+    expect(within(ligne2).queryByText('En appui')).toBeNull();
   });
 });

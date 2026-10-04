@@ -9,28 +9,60 @@ vi.mock('react-i18next', () => ({
     },
   }),
 }));
+const auth = vi.hoisted(() => ({ state: { orgId: 'osn-1', role: 'responsable_osn', orgType: 'OSN', user: { id: 'u1' } } as Record<string, unknown> }));
 vi.mock('@/stores/authStore', () => ({
-  useAuthStore: (sel?: (s: { orgId: string }) => unknown) => {
-    const s = { orgId: 'osn-1' };
-    return sel ? sel(s) : s;
-  },
+  useAuthStore: (sel?: (s: Record<string, unknown>) => unknown) => (sel ? sel(auth.state) : auth.state),
 }));
 vi.mock('@/services/organisationService', () => ({
-  listOrganisations: vi.fn().mockResolvedValue([{ id: 'f1', code: 'ANT-01', nom: 'Analamanga', type: 'ASN' }]),
+  listOrganisations: vi.fn(),
   getLibelleNiveauLocal: vi.fn().mockResolvedValue('Faritany'),
 }));
 vi.mock('@/services/dashboardService', () => ({ getDashboardStatsByOrgIds: vi.fn().mockResolvedValue({}) }));
-vi.mock('@/services/planActionService', () => ({ listActionAggByOrgIds: vi.fn().mockResolvedValue({}) }));
+vi.mock('@/services/planActionService', () => ({
+  listActionAggByOrgIds: vi.fn().mockResolvedValue({}),
+  listPlansByOrg: vi.fn().mockResolvedValue([]),
+  listActions: vi.fn().mockResolvedValue([]),
+  estEnRetard: () => false,
+}));
+vi.mock('@/services/evaluationService', () => ({ listEvaluationsByOrg: vi.fn().mockResolvedValue([]) }));
+vi.mock('@/services/referentielService', () => ({ getReferentiel: vi.fn().mockResolvedValue(null) }));
+vi.mock('@/services/adminService', () => ({ listUsers: vi.fn().mockResolvedValue([]) }));
+vi.mock('@/services/appuiService', () => ({
+  listAppuisOuvertsByOrgIds: vi.fn().mockResolvedValue({}),
+  ouvrirAppui: vi.fn(), mettreAJourAppui: vi.fn(), cloreAppui: vi.fn(), creerActionAppui: vi.fn(),
+}));
 
 import { PilotageNationalPage } from '@/pages/dashboard/PilotageNationalPage';
+import { listOrganisations } from '@/services/organisationService';
 
-describe('PilotageNationalPage (dégradation)', () => {
-  beforeEach(() => vi.clearAllMocks());
-  it('affiche « X évalués / N » et la ligne non évalué sans faux « tout va bien »', async () => {
+const FAR = [{ id: 'f1', code: 'ANT-01', nom: 'Analamanga', type: 'ASN', actif: true, poids: 1 }];
+
+describe('PilotageNationalPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    auth.state = { orgId: 'osn-1', role: 'responsable_osn', orgType: 'OSN', user: { id: 'u1' } };
+    vi.mocked(listOrganisations).mockImplementation(async (type) => (type === 'OSN' ? [{ id: 'osn-1', nom: 'TEM', type: 'OSN', actif: true, poids: 1 }] : FAR) as never);
+  });
+
+  it('dégradation : « X évalués / N » + ligne non évalué, sans faux « tout va bien »', async () => {
     render(<PilotageNationalPage />);
     await waitFor(() => expect(screen.getByText('Analamanga')).toBeInTheDocument());
-    // stats vides → Faritany non évalué
     expect(screen.getByText('non évalué')).toBeInTheDocument();
-    expect(screen.getByText(/0.*\/.*1/)).toBeInTheDocument(); // « 0 évalués / 1 »
+    expect(screen.getByText('0 évalués / 1')).toBeInTheDocument();
+  });
+
+  it('bandeau synthèse : 3 compteurs dont « Actions nationales en cours »', async () => {
+    render(<PilotageNationalPage />);
+    await waitFor(() => expect(screen.getByText('Analamanga')).toBeInTheDocument());
+    expect(screen.getByText('Faritany en zone appui')).toBeInTheDocument();
+    expect(screen.getByText('Faritany avec essentiel KO')).toBeInTheDocument();
+    expect(screen.getByText('Actions nationales en cours')).toBeInTheDocument();
+  });
+
+  it('admin_global rattaché à OMMS → voit les Faritany de l OSN résolue', async () => {
+    auth.state = { orgId: 'omms', role: 'admin_global', orgType: 'OMMS', user: { id: 'u-admin' } };
+    render(<PilotageNationalPage />);
+    await waitFor(() => expect(screen.getByText('Analamanga')).toBeInTheDocument());
+    expect(listOrganisations).toHaveBeenCalledWith('ASN', 'osn-1');
   });
 });

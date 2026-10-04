@@ -44,6 +44,7 @@ export function WatchlistFaritany({ rows, niveauLabel, onSelect }: { rows: Watch
             <th className="py-2 px-2 text-center">{t('pages.pilotageNational.colRetard', 'Retard')}</th>
             <th className="py-2 px-2 text-center">{t('pages.pilotageNational.colBloque', 'Bloquées')}</th>
             <th className="py-2 px-2">{t('pages.pilotageNational.colStatut', 'Statut')}</th>
+            <th className="py-2 px-2">{t('pages.pilotageNational.colAppui', 'Appui')}</th>
             <th className="py-2 pl-2" aria-hidden="true" />
           </tr>
         </thead>
@@ -51,7 +52,7 @@ export function WatchlistFaritany({ rows, niveauLabel, onSelect }: { rows: Watch
           {groupes.map(g => (
             <Fragment key={`grp-${g.prefixe}`}>
               <tr className="bg-[#f0f4fd]">
-                <td colSpan={7} className="py-1.5 px-3 text-xs font-bold text-[#15236e]">{g.nom}</td>
+                <td colSpan={8} className="py-1.5 px-3 text-xs font-bold text-[#15236e]">{g.nom}</td>
               </tr>
               {g.orgs.map(o => {
                 const r = byId.get(o.id)!;
@@ -70,6 +71,13 @@ export function WatchlistFaritany({ rows, niveauLabel, onSelect }: { rows: Watch
                       <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${STATUT_STYLE[r.statut]}`}>
                         {t(`pages.pilotageNational.statuts.${r.statut}`, STATUT_LABEL[r.statut])}
                       </span>
+                    </td>
+                    <td className="py-2 px-2">
+                      {r.enAppui ? (
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#e0e3ff] text-[#15236e]">
+                          {t('pages.pilotageNational.enAppui', 'En appui')}
+                        </span>
+                      ) : <span className="text-[#767682]">—</span>}
                     </td>
                     <td className="py-2 pl-2 text-[#767682]">{onSelect ? '↗' : ''}</td>
                   </tr>
