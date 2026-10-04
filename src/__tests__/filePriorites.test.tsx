@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { FilePriorites } from '@/components/dashboard/pilotage/FilePriorites';
 import type { PrioriteItem } from '@/utils/pilotage';
@@ -33,5 +33,15 @@ describe('FilePriorites', () => {
     wrap(<FilePriorites items={items} evalue={true} actionsTerminees={0} />);
     expect(screen.getByText('F401 — Assurance')).toBeInTheDocument();
     expect(screen.getByText('Recruter')).toBeInTheDocument();
+  });
+  it('badge « National » sur une action d appui, absent sur une action régionale', () => {
+    wrap(<FilePriorites evalue actionsTerminees={0} items={[
+      { kind: 'action', id: 'n', titre: 'Former le trésorier', statut: 'bloque', dateEcheance: '2026-09-01', priorite: 'haute', origine: 'nationale' },
+      { kind: 'action', id: 'r', titre: 'Recenser', statut: 'a_faire', dateEcheance: '2026-08-01', priorite: 'basse', origine: 'regionale' },
+    ]} />);
+    const ligneN = screen.getByText('Former le trésorier').closest('li')!;
+    const ligneR = screen.getByText('Recenser').closest('li')!;
+    expect(within(ligneN).getByText('National')).toBeInTheDocument();
+    expect(within(ligneR).queryByText('National')).toBeNull();
   });
 });

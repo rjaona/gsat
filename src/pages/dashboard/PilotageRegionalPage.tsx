@@ -8,7 +8,7 @@ import { FilePriorites } from '@/components/dashboard/pilotage/FilePriorites';
 export function PilotageRegionalPage() {
   const { t } = useTranslation();
   const orgId = useAuthStore(s => s.orgId);
-  const { items, evalue, actionsTerminees, koCount, retardCount, bloqueCount, loading, error, load, reset } = usePilotageRegionalStore();
+  const { items, evalue, actionsTerminees, koCount, retardCount, bloqueCount, enAppui, loading, error, load, reset } = usePilotageRegionalStore();
 
   useEffect(() => {
     if (!orgId) return;
@@ -28,6 +28,11 @@ export function PilotageRegionalPage() {
       <div>
         <span className="text-xs font-bold tracking-widest text-[#454651] uppercase">{t('pages.pilotageRegional.kicker', 'Cockpit décisionnel')}</span>
         <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#15236e]">{t('pages.pilotageRegional.title', 'Mes priorités d’action')}</h1>
+        {enAppui && (
+          <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#e0e3ff] text-[#15236e]">
+            {t('pages.pilotageRegional.chipAppui', 'En appui national')}
+          </span>
+        )}
       </div>
 
       {error && <div className="p-4 bg-[#ffdad6] text-[#93000a] rounded-xl text-sm">{error}</div>}

@@ -22,10 +22,14 @@ vi.mock('@/services/planActionService', async () => ({
   listActions: vi.fn().mockResolvedValue([]),
   estEnRetard: (s: string, d: string | null, t: string) => !!d && s !== 'termine' && s !== 'bloque' && d.slice(0,10) < t,
 }));
+vi.mock('@/services/appuiService', () => ({ getAppuiOuvert: vi.fn().mockResolvedValue(null) }));
+vi.mock('@/services/referentielService', () => ({ getReferentiel: vi.fn().mockResolvedValue(null) }));
 
 import { PilotageRegionalPage } from '@/pages/dashboard/PilotageRegionalPage';
 import { getDashboardStats } from '@/services/dashboardService';
 import { listPlansByOrg } from '@/services/planActionService';
+import { getAppuiOuvert } from '@/services/appuiService';
+import { getReferentiel } from '@/services/referentielService';
 
 describe('PilotageRegionalPage (dégradation)', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -40,5 +44,14 @@ describe('PilotageRegionalPage (dégradation)', () => {
     render(<MemoryRouter><PilotageRegionalPage /></MemoryRouter>);
     await waitFor(() => expect(screen.getByText('boom')).toBeInTheDocument());
     expect(screen.queryByText(/Aucune priorité en attente/)).not.toBeInTheDocument();
+  });
+
+  it('chip « En appui national » + libellé réel du KO', async () => {
+    vi.mocked(getDashboardStats).mockResolvedValueOnce({ criteresEssentielsKO: ['F401'], referentielVersion: 'far_v1_0' } as any);
+    vi.mocked(getAppuiOuvert).mockResolvedValueOnce({ id: 'ap1', orgId: 'f1', statut: 'ouvert', ouvertAt: '2026-10-04' });
+    vi.mocked(getReferentiel).mockResolvedValueOnce({ dimensions: [{ criteres: [{ code: 'F401', libelle: { fr: 'Assurance des membres', en: '' } }] }] } as any);
+    render(<MemoryRouter><PilotageRegionalPage /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText('En appui national')).toBeInTheDocument());
+    expect(screen.getByText('F401 — Assurance des membres')).toBeInTheDocument();
   });
 });

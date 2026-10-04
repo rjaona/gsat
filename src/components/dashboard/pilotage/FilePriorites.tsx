@@ -35,6 +35,11 @@ export function FilePriorites({ items, evalue, actionsTerminees }: { items: Prio
         return (
           <li key={`ac-${it.id}`} className="flex items-center gap-3 p-3 rounded-lg bg-[#f8f9ff]">
             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${badge.cls}`}>{badge.txt}</span>
+            {it.origine === 'nationale' && (
+              <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-[#e0e3ff] text-[#15236e]">
+                {t('pages.pilotageRegional.badgeNational', 'National')}
+              </span>
+            )}
             <span className="text-sm font-medium text-[#171c22] flex-1">{it.titre}</span>
             <Link to="/action-plan" className="text-xs font-semibold text-[#15236e] hover:underline shrink-0">
               {t('pages.pilotageRegional.agir', 'Agir')} ↗
