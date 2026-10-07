@@ -124,6 +124,7 @@ describe('gsat-link-card (E19 vague 2)', () => {
     const r = await call({ method });
     expect(r.status).toBe(405);
     expect(r.res.headers.get('allow')).toBe('GET');
+    expect(r.res.headers.get('cache-control')).toBe('no-store');
     expect(r.loadEvaluation).not.toHaveBeenCalled();
   });
 
@@ -282,6 +283,7 @@ describe('gsat-link-card (E19 vague 2)', () => {
     const r = await call({ load: async () => { throw new Error('boom db'); } });
     expect(r.status).toBe(500);
     expect(r.body).toEqual({ error: 'Erreur interne.' });
+    expect(r.res.headers.get('cache-control')).toBe('no-store');
     expect(r.text).not.toContain('boom');
     expect(r.logError).toHaveBeenCalledWith('boom db');
   });

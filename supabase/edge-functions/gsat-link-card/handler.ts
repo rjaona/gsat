@@ -170,7 +170,7 @@ export async function handleLinkCard(req: Request, deps: LinkCardDeps): Promise<
   if (!(await keyMatches(req.headers.get(KEY_HEADER), expected))) {
     return json(401, { error: 'Clé de carte invalide.' }, NO_STORE)
   }
-  if (req.method !== 'GET') return json(405, { error: 'Méthode non autorisée.' }, { Allow: 'GET' })
+  if (req.method !== 'GET') return json(405, { error: 'Méthode non autorisée.' }, { Allow: 'GET', ...NO_STORE })
 
   // Seul le paramètre `path` compte : le chemin de la requête dépend de Kong.
   let paths: string[]
@@ -209,6 +209,6 @@ export async function handleLinkCard(req: Request, deps: LinkCardDeps): Promise<
     )
   } catch (err) {
     deps.logError?.(err instanceof Error ? err.message : 'error')
-    return json(500, { error: 'Erreur interne.' })
+    return json(500, { error: 'Erreur interne.' }, NO_STORE)
   }
 }

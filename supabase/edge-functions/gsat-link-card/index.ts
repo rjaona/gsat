@@ -37,7 +37,7 @@ Deno.serve((req: Request): Promise<Response> =>
         .eq('id', id)
         .maybeSingle()
       // Code PostgREST seulement : ni donnée ni secret dans le journal.
-      if (error) throw new Error(`evaluations read failed (${error.code ?? 'unknown'})`)
+      if (error) throw new Error(`evaluations read failed (${error.code || 'unknown'})`)
       return toCardRow(data)
     },
     logError: (message) => console.error('[gsat-link-card]', message),
