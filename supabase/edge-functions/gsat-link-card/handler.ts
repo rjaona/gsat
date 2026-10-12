@@ -20,7 +20,7 @@ const NO_STORE: Record<string, string> = { 'Cache-Control': 'no-store' }
 
 // Liste blanche de la requête PostgREST : rien d'autre n'est lu.
 export const EVALUATION_SELECT =
-  'statut, type, campagne:campagnes(nom, date_ouverture, date_fermeture), organisation:organisations(id, parent_id, nom, code)'
+  'statut, type, campagne:campagnes(nom, date_ouverture, date_fermeture), organisation:organisations(id, parent_id, type, actif, nom, code)'
 
 // Statuts lisibles (refus par défaut) : `brouillon` et tout autre → 404.
 const STATUS_LABELS: ReadonlyMap<string, string> = new Map([
@@ -57,6 +57,8 @@ export interface LinkCardOrganisation {
   /** Servent à la garde de périmètre seulement : jamais renvoyés. */
   id: unknown
   parent_id: unknown
+  type: unknown
+  actif: unknown
   nom: unknown
   code: unknown
 }
@@ -80,6 +82,12 @@ export interface LinkCardDeps {
   rootOrgIds: string | undefined
   /** Lecture (service role) par id, colonnes de EVALUATION_SELECT seulement ; null = absente. */
   loadEvaluation: (id: string) => Promise<LinkCardEvaluation | null>
+  /**
+   * Racine (parent) d'une organisation, par clé primaire : seulement `type` et
+   * `actif`. Appelée au plus une fois par requête, uniquement quand l'organisation
+   * n'est pas elle-même une racine listée. null = absente.
+   */
+  loadOrganisation: (id: string) => Promise<{ type: unknown; actif: unknown } | null>
   /** Journal d'erreur : un message technique, jamais la clé ni une donnée. */
   logError?: ((message: string) => void) | undefined
 }
@@ -98,8 +106,8 @@ function json(status: number, body: unknown, headers: Record<string, string> = {
   })
 }
 
-const badPath = (): Response => json(400, { error: 'Chemin non reconnu.', code: 'link_card_bad_path' })
-const notFound = (): Response => json(404, { error: 'Évaluation introuvable.', code: 'link_card_not_found' })
+const badPath = (): Response => json(400, { error: 'Chemin non reconnu.', code: 'link_card_bad_path' }, NO_STORE)
+const notFound = (): Response => json(404, { error: 'Évaluation introuvable.', code: 'link_card_not_found' }, NO_STORE)
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -112,13 +120,23 @@ export function configuredRoots(raw: string | undefined): ReadonlySet<string> | 
   return ids.length > 0 ? new Set(ids) : null
 }
 
-// L'OSN lui-même ou un enfant direct (ASN). Tout le reste, y compris une
-// organisation sans id ou sans parent, est hors périmètre.
-function inScope(org: LinkCardOrganisation | null | undefined, roots: ReadonlySet<string>): boolean {
-  if (!org) return false
+const isRoot = (type: unknown, actif: unknown): boolean => type === 'OSN' && actif === true
+
+// L'OSN lui-même ou un enfant direct (ASN), tous deux actifs, la racine étant de
+// type OSN. Tout le reste (sans id ou parent, inactif, racine configurée qui
+// n'est pas une OSN) est hors périmètre.
+async function inScope(
+  org: LinkCardOrganisation | null | undefined,
+  roots: ReadonlySet<string>,
+  loadOrganisation: LinkCardDeps['loadOrganisation'],
+): Promise<boolean> {
+  if (!org || org.actif !== true) return false
   const id = typeof org.id === 'string' ? org.id.toLowerCase() : ''
   const parent = typeof org.parent_id === 'string' ? org.parent_id.toLowerCase() : ''
-  return roots.has(id) || roots.has(parent)
+  if (roots.has(id)) return isRoot(org.type, org.actif)
+  if (!parent || !roots.has(parent)) return false
+  const root = await loadOrganisation(parent)
+  return !!root && isRoot(root.type, root.actif)
 }
 
 export function configuredKey(raw: string | undefined): string | null {
@@ -162,7 +180,14 @@ export function toCardRow(raw: unknown): LinkCardEvaluation | null {
       ? { nom: campagne['nom'], date_ouverture: campagne['date_ouverture'], date_fermeture: campagne['date_fermeture'] }
       : null,
     organisation: organisation
-      ? { id: organisation['id'], parent_id: organisation['parent_id'], nom: organisation['nom'], code: organisation['code'] }
+      ? {
+          id: organisation['id'],
+          parent_id: organisation['parent_id'],
+          type: organisation['type'],
+          actif: organisation['actif'],
+          nom: organisation['nom'],
+          code: organisation['code'],
+        }
       : null,
   }
 }
@@ -221,7 +246,7 @@ export async function handleLinkCard(req: Request, deps: LinkCardDeps): Promise<
     const statut = typeof row?.statut === 'string' ? row.statut : ''
     const stateLabel = STATUS_LABELS.get(statut)
     // Absente, brouillon, statut inconnu ou hors périmètre OSN TEM : indiscernables.
-    if (!row || !stateLabel || !inScope(row.organisation, roots)) return notFound()
+    if (!row || !stateLabel || !(await inScope(row.organisation, roots, deps.loadOrganisation))) return notFound()
 
     const organisation = text(row.organisation?.nom)
     const campagne = text(row.campagne?.nom)

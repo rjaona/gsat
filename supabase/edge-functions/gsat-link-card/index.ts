@@ -44,6 +44,11 @@ Deno.serve((req: Request): Promise<Response> =>
       if (error) throw new Error(`evaluations read failed (${error.code || 'unknown'})`)
       return toCardRow(data)
     },
+    loadOrganisation: async (id) => {
+      const { data, error } = await client().from('organisations').select('type, actif').eq('id', id).maybeSingle()
+      if (error) throw new Error(`organisations read failed (${error.code || 'unknown'})`)
+      return data ? { type: data.type, actif: data.actif } : null
+    },
     logError: (message) => console.error('[gsat-link-card]', message),
   }),
 )

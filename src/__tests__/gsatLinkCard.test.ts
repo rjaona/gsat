@@ -32,7 +32,7 @@ const ROW: LinkCardEvaluation = {
     date_ouverture: '2026-03-01T00:00:00+00:00',
     date_fermeture: '2026-06-30T00:00:00+00:00',
   },
-  organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'Faritany Analamanga', code: 'ANT-01' },
+  organisation: { id: ASN_ID, parent_id: OSN_ID, type: 'ASN', actif: true, nom: 'Faritany Analamanga', code: 'ANT-01' },
 };
 
 interface Card {
@@ -50,6 +50,7 @@ interface Call {
   key?: string | null | undefined;
   serverKey?: string | undefined;
   roots?: string | undefined;
+  root?: { type: unknown; actif: unknown } | null | undefined;
   row?: LinkCardEvaluation | null | undefined;
   load?: ((id: string) => Promise<LinkCardEvaluation | null>) | undefined;
   method?: string | undefined;
@@ -59,6 +60,7 @@ interface Call {
 async function call(o: Call = {}) {
   const loadEvaluation = vi.fn(o.load ?? (async (_id: string) => ('row' in o ? (o.row ?? null) : ROW)));
   const logError = vi.fn();
+  const loadOrganisation = vi.fn(async (_id: string) => ('root' in o ? (o.root ?? null) : { type: 'OSN', actif: true }));
   const path = 'path' in o ? o.path : `/evaluation/${ID}`;
   const url = o.url ?? (path === null || path === undefined ? BASE : `${BASE}?path=${encodeURIComponent(path)}`);
   const headers = new Headers();
@@ -68,6 +70,7 @@ async function call(o: Call = {}) {
     key: 'serverKey' in o ? o.serverKey : KEY,
     rootOrgIds: 'roots' in o ? o.roots : OSN_ID,
     loadEvaluation,
+    loadOrganisation,
     logError,
   });
   const text = await res.text();
@@ -77,7 +80,7 @@ async function call(o: Call = {}) {
   } catch {
     body = {};
   }
-  return { res, status: res.status, body, text, loadEvaluation, logError };
+  return { res, status: res.status, body, text, loadEvaluation, loadOrganisation, logError };
 }
 
 describe('gsat-link-card (E19 vague 2)', () => {
@@ -150,7 +153,7 @@ describe('gsat-link-card (E19 vague 2)', () => {
     });
 
     it('carte pour une évaluation de l\'OSN TEM lui-même, casse et espaces tolérés', async () => {
-      const row = { ...ROW, organisation: { ...ROW.organisation!, id: OSN_ID.toUpperCase(), parent_id: null } };
+      const row = { ...ROW, organisation: { ...ROW.organisation!, id: OSN_ID.toUpperCase(), parent_id: null, type: 'OSN' } };
       expect((await call({ row, roots: `${OTHER_OSN_ID}, ${OSN_ID}` })).status).toBe(200);
     });
 
@@ -165,6 +168,31 @@ describe('gsat-link-card (E19 vague 2)', () => {
       expect(out.status).toBe(404);
       expect(out.body).toEqual(unknown.body);
       expect(out.res.headers.get('cache-control')).toBe(unknown.res.headers.get('cache-control'));
+    });
+
+    it('inactif, racine inactive ou racine non OSN : 404 identique, une seule lecture de racine', async () => {
+      const unknown = await call({ row: null });
+      const cases = [
+        await call({ row: { ...ROW, organisation: { ...ROW.organisation!, actif: false } } }),
+        await call({ root: { type: 'OSN', actif: false } }),
+        await call({ root: { type: 'REGION', actif: true } }),
+        await call({ root: null }),
+        await call({ row: { ...ROW, organisation: { ...ROW.organisation!, id: OSN_ID, parent_id: null, type: 'REGION' } } }),
+        await call({ row: { ...ROW, organisation: { ...ROW.organisation!, id: OSN_ID, parent_id: null, type: 'OSN', actif: false } } }),
+      ];
+      for (const r of cases) {
+        expect(r.status).toBe(404);
+        expect(r.text).toBe(unknown.text);
+        expect(r.res.headers.get('cache-control')).toBe('no-store');
+      }
+      expect(cases[1]!.loadOrganisation).toHaveBeenCalledTimes(1);
+      expect(cases[1]!.loadOrganisation).toHaveBeenCalledWith(OSN_ID);
+      expect(cases[4]!.loadOrganisation).not.toHaveBeenCalled();
+    });
+
+    it('404 et 400 ne sont jamais mis en cache', async () => {
+      expect((await call({ row: null })).res.headers.get('cache-control')).toBe('no-store');
+      expect((await call({ path: '/x' })).res.headers.get('cache-control')).toBe('no-store');
     });
 
     it('404 sans organisation (hors périmètre par défaut)', async () => {
@@ -305,8 +333,8 @@ describe('gsat-link-card (E19 vague 2)', () => {
 
   it.each([
     ['type inconnu : omis', { ...ROW, type: 'autre' }, 'Faritany Analamanga', 'Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026 · Antananarivo'],
-    ['province inconnue (TEM) : omise', { ...ROW, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'Faritany Analamanga', code: 'TEM' } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026'],
-    ['code absent : province omise', { ...ROW, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'Faritany Analamanga', code: null } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026'],
+    ['province inconnue (TEM) : omise', { ...ROW, organisation: { id: ASN_ID, parent_id: OSN_ID, type: 'ASN', actif: true, nom: 'Faritany Analamanga', code: 'TEM' } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026'],
+    ['code absent : province omise', { ...ROW, organisation: { id: ASN_ID, parent_id: OSN_ID, type: 'ASN', actif: true, nom: 'Faritany Analamanga', code: null } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026'],
     ['même jour : une seule date', { ...ROW, campagne: { nom: 'Cycle 1 Faritany 2026', date_ouverture: '2026-03-01T06:00:00+00:00', date_fermeture: '2026-03-01T15:00:00+00:00' } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 · Antananarivo'],
     ['dates invalides : omises', { ...ROW, campagne: { nom: 'Cycle 1 Faritany 2026', date_ouverture: 'demain', date_fermeture: 42 } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · Antananarivo'],
     ['fuseau Antananarivo', { ...ROW, campagne: { nom: 'Cycle 1 Faritany 2026', date_ouverture: '2026-05-03T21:30:00Z', date_fermeture: null } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 4 mai 2026 · Antananarivo'],
@@ -319,11 +347,11 @@ describe('gsat-link-card (E19 vague 2)', () => {
   });
 
   it('200 : textes nettoyés et bornés à 200 caractères ; rien pour le sous-titre → null', async () => {
-    const long = await call({ row: { statut: 'soumise', type: null, campagne: null, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'x'.repeat(500), code: null } } });
+    const long = await call({ row: { statut: 'soumise', type: null, campagne: null, organisation: { id: ASN_ID, parent_id: OSN_ID, type: 'ASN', actif: true, nom: 'x'.repeat(500), code: null } } });
     expect(long.body.title).toBe('x'.repeat(200));
     expect(long.body.subtitle).toBeNull();
     expect(long.body.state).toBe('soumise');
-    const dirty = await call({ row: { ...ROW, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'Faritany\u0000 Analamanga\n', code: 'ANT-01' } } });
+    const dirty = await call({ row: { ...ROW, organisation: { id: ASN_ID, parent_id: OSN_ID, type: 'ASN', actif: true, nom: 'Faritany\u0000 Analamanga\n', code: 'ANT-01' } } });
     expect(dirty.body.title).toBe('Faritany Analamanga');
   });
 
@@ -339,7 +367,7 @@ describe('gsat-link-card (E19 vague 2)', () => {
   describe('lecture', () => {
     it('la requête ne sélectionne que la liste blanche', () => {
       expect(EVALUATION_SELECT).toBe(
-        'statut, type, campagne:campagnes(nom, date_ouverture, date_fermeture), organisation:organisations(id, parent_id, nom, code)',
+        'statut, type, campagne:campagnes(nom, date_ouverture, date_fermeture), organisation:organisations(id, parent_id, type, actif, nom, code)',
       );
       for (const forbidden of ['*', 'score', '_by', '_par', '_name', 'reviewer', 'revue', 'pv_', 'commentaire', 'description', 'perimetre']) {
         expect(EVALUATION_SELECT).not.toContain(forbidden);
@@ -347,12 +375,12 @@ describe('gsat-link-card (E19 vague 2)', () => {
     });
 
     it('toCardRow : ne garde que les clés de la liste blanche', () => {
-      const row = toCardRow({ statut: 'soumise', type: 'auto', score_global: 1, campagne: { nom: 'C', date_ouverture: null, date_fermeture: null, statut: 'ouverte' }, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'O', code: 'ANT-01', lat: 1 } });
+      const row = toCardRow({ statut: 'soumise', type: 'auto', score_global: 1, campagne: { nom: 'C', date_ouverture: null, date_fermeture: null, statut: 'ouverte' }, organisation: { id: ASN_ID, parent_id: OSN_ID, type: 'ASN', actif: true, nom: 'O', code: 'ANT-01', lat: 1 } });
       expect(row).toEqual({
         statut: 'soumise',
         type: 'auto',
         campagne: { nom: 'C', date_ouverture: null, date_fermeture: null },
-        organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'O', code: 'ANT-01' },
+        organisation: { id: ASN_ID, parent_id: OSN_ID, type: 'ASN', actif: true, nom: 'O', code: 'ANT-01' },
       });
     });
 
