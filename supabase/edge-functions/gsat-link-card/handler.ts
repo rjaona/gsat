@@ -4,8 +4,9 @@
 // à serveur avec l'en-tête x-tem-link-card-key (secret GSAT_LINK_CARD_KEY).
 // Module pur : ni Deno.*, ni import distant, ni node: — testé par vitest
 // (src/__tests__/gsatLinkCard.test.ts). index.ts est l'entrée Deno.
-// La lecture se fait avec le service role (RLS contournée) : la liste blanche
-// ci-dessous (requête ET réponse) est la SEULE garde sur le contenu. Jamais de
+// La lecture se fait avec le service role (RLS contournée) : deux gardes seulement —
+// la liste blanche ci-dessous (requête ET réponse) pour le contenu, et la liste
+// d'organisations racines (GSAT_LINK_CARD_ROOT_ORG_IDS) pour le périmètre. Jamais de
 // score, ni de nom de personne, ni de revue, de PV ou de commentaire.
 // =============================================================================
 
@@ -19,7 +20,7 @@ const NO_STORE: Record<string, string> = { 'Cache-Control': 'no-store' }
 
 // Liste blanche de la requête PostgREST : rien d'autre n'est lu.
 export const EVALUATION_SELECT =
-  'statut, type, campagne:campagnes(nom, date_ouverture, date_fermeture), organisation:organisations(nom, code)'
+  'statut, type, campagne:campagnes(nom, date_ouverture, date_fermeture), organisation:organisations(id, parent_id, nom, code)'
 
 // Statuts lisibles (refus par défaut) : `brouillon` et tout autre → 404.
 const STATUS_LABELS: ReadonlyMap<string, string> = new Map([
@@ -53,6 +54,9 @@ export interface LinkCardCampagne {
 }
 
 export interface LinkCardOrganisation {
+  /** Servent à la garde de périmètre seulement : jamais renvoyés. */
+  id: unknown
+  parent_id: unknown
   nom: unknown
   code: unknown
 }
@@ -67,6 +71,13 @@ export interface LinkCardEvaluation {
 export interface LinkCardDeps {
   /** Secret GSAT_LINK_CARD_KEY, lu à chaque requête. */
   key: string | undefined
+  /**
+   * GSAT_LINK_CARD_ROOT_ORG_IDS : UUID d'organisations racines (l'OSN TEM),
+   * séparés par des virgules. Seules leurs évaluations et celles de leurs
+   * enfants directs (les ASN = Faritany) donnent une carte. Absent, vide ou
+   * sans UUID valide : fonction fermée (503), jamais « tout ouvert ».
+   */
+  rootOrgIds: string | undefined
   /** Lecture (service role) par id, colonnes de EVALUATION_SELECT seulement ; null = absente. */
   loadEvaluation: (id: string) => Promise<LinkCardEvaluation | null>
   /** Journal d'erreur : un message technique, jamais la clé ni une donnée. */
@@ -89,6 +100,26 @@ function json(status: number, body: unknown, headers: Record<string, string> = {
 
 const badPath = (): Response => json(400, { error: 'Chemin non reconnu.', code: 'link_card_bad_path' })
 const notFound = (): Response => json(404, { error: 'Évaluation introuvable.', code: 'link_card_not_found' })
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** Liste blanche d'organisations racines ; null si aucune valide (fonction fermée). */
+export function configuredRoots(raw: string | undefined): ReadonlySet<string> | null {
+  const ids = (raw ?? '')
+    .split(',')
+    .map((part) => part.trim().toLowerCase())
+    .filter((part) => UUID.test(part))
+  return ids.length > 0 ? new Set(ids) : null
+}
+
+// L'OSN lui-même ou un enfant direct (ASN). Tout le reste, y compris une
+// organisation sans id ou sans parent, est hors périmètre.
+function inScope(org: LinkCardOrganisation | null | undefined, roots: ReadonlySet<string>): boolean {
+  if (!org) return false
+  const id = typeof org.id === 'string' ? org.id.toLowerCase() : ''
+  const parent = typeof org.parent_id === 'string' ? org.parent_id.toLowerCase() : ''
+  return roots.has(id) || roots.has(parent)
+}
 
 export function configuredKey(raw: string | undefined): string | null {
   const key = (raw ?? '').trim()
@@ -130,7 +161,9 @@ export function toCardRow(raw: unknown): LinkCardEvaluation | null {
     campagne: campagne
       ? { nom: campagne['nom'], date_ouverture: campagne['date_ouverture'], date_fermeture: campagne['date_fermeture'] }
       : null,
-    organisation: organisation ? { nom: organisation['nom'], code: organisation['code'] } : null,
+    organisation: organisation
+      ? { id: organisation['id'], parent_id: organisation['parent_id'], nom: organisation['nom'], code: organisation['code'] }
+      : null,
   }
 }
 
@@ -166,7 +199,8 @@ function province(code: unknown): string | null {
 
 export async function handleLinkCard(req: Request, deps: LinkCardDeps): Promise<Response> {
   const expected = configuredKey(deps.key)
-  if (!expected) return json(503, { error: 'Cartes de liens non configurées.' }, NO_STORE)
+  const roots = configuredRoots(deps.rootOrgIds)
+  if (!expected || !roots) return json(503, { error: 'Cartes de liens non configurées.' }, NO_STORE)
   if (!(await keyMatches(req.headers.get(KEY_HEADER), expected))) {
     return json(401, { error: 'Clé de carte invalide.' }, NO_STORE)
   }
@@ -186,8 +220,8 @@ export async function handleLinkCard(req: Request, deps: LinkCardDeps): Promise<
     const row = await deps.loadEvaluation(id)
     const statut = typeof row?.statut === 'string' ? row.statut : ''
     const stateLabel = STATUS_LABELS.get(statut)
-    // Absente, brouillon ou statut inconnu : indiscernables.
-    if (!row || !stateLabel) return notFound()
+    // Absente, brouillon, statut inconnu ou hors périmètre OSN TEM : indiscernables.
+    if (!row || !stateLabel || !inScope(row.organisation, roots)) return notFound()
 
     const organisation = text(row.organisation?.nom)
     const campagne = text(row.campagne?.nom)

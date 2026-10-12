@@ -4,6 +4,9 @@
 // En-tête x-tem-link-card-key = secret GSAT_LINK_CARD_KEY du runtime (≥ 32
 // caractères, même valeur que TEM_GSAT_LINK_CARD_KEY côté wiki, distincte de
 // la clé ERPTEM ; générer hors dépôt : openssl rand -hex 32 ; jamais commitée).
+// GSAT_LINK_CARD_ROOT_ORG_IDS = UUID de l'OSN TEM (virgules pour plusieurs) :
+// seules ses évaluations et celles de ses ASN donnent une carte ; absente →
+// fonction fermée (503). Hors périmètre → 404, comme une évaluation inconnue.
 // Runtime : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (service role : RLS
 // contournée, la liste blanche de handler.ts est la seule garde).
 // À servir SANS vérification JWT (verify_jwt = false) : le wiki n'a pas de JWT
@@ -30,6 +33,7 @@ function client(): SupabaseClient {
 Deno.serve((req: Request): Promise<Response> =>
   handleLinkCard(req, {
     key: Deno.env.get('GSAT_LINK_CARD_KEY'),
+    rootOrgIds: Deno.env.get('GSAT_LINK_CARD_ROOT_ORG_IDS'),
     loadEvaluation: async (id) => {
       const { data, error } = await client()
         .from('evaluations')

@@ -17,6 +17,9 @@ import {
 import { PROVINCES } from '@/utils/perimetreProvinces';
 
 const KEY = 'recette-e19-gsat-link-card-key-0001';
+const OSN_ID = '5a1f0c3e-7b2d-4e6a-8c9b-1d2e3f4a5b6c';
+const OTHER_OSN_ID = '9e8d7c6b-5a49-4382-b1a0-f9e8d7c6b5a4';
+const ASN_ID = 'c1c1c1c1-0000-4000-8000-000000000001';
 const ID = '0b9d4c2e-5f1a-4c3b-9e8d-7a6b5c4d3e2f';
 const BASE = 'http://localhost:8000/gsat-link-card';
 const SUBTITLE = 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026 · Antananarivo';
@@ -29,7 +32,7 @@ const ROW: LinkCardEvaluation = {
     date_ouverture: '2026-03-01T00:00:00+00:00',
     date_fermeture: '2026-06-30T00:00:00+00:00',
   },
-  organisation: { nom: 'Faritany Analamanga', code: 'ANT-01' },
+  organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'Faritany Analamanga', code: 'ANT-01' },
 };
 
 interface Card {
@@ -46,6 +49,7 @@ interface Call {
   path?: string | null | undefined;
   key?: string | null | undefined;
   serverKey?: string | undefined;
+  roots?: string | undefined;
   row?: LinkCardEvaluation | null | undefined;
   load?: ((id: string) => Promise<LinkCardEvaluation | null>) | undefined;
   method?: string | undefined;
@@ -62,6 +66,7 @@ async function call(o: Call = {}) {
   if (key !== null && key !== undefined) headers.set(KEY_HEADER, key);
   const res = await handleLinkCard(new Request(url, { method: o.method ?? 'GET', headers }), {
     key: 'serverKey' in o ? o.serverKey : KEY,
+    rootOrgIds: 'roots' in o ? o.roots : OSN_ID,
     loadEvaluation,
     logError,
   });
@@ -126,6 +131,51 @@ describe('gsat-link-card (E19 vague 2)', () => {
     expect(r.res.headers.get('allow')).toBe('GET');
     expect(r.res.headers.get('cache-control')).toBe('no-store');
     expect(r.loadEvaluation).not.toHaveBeenCalled();
+  });
+
+  describe('périmètre OSN TEM', () => {
+    it.each([
+      ['absente', undefined],
+      ['vide', ' , '],
+      ['sans UUID valide', 'TEM, pas-un-uuid'],
+    ])('503 si GSAT_LINK_CARD_ROOT_ORG_IDS est %s, sans lecture', async (_label, roots) => {
+      const r = await call({ roots });
+      expect(r.status).toBe(503);
+      expect(r.res.headers.get('cache-control')).toBe('no-store');
+      expect(r.loadEvaluation).not.toHaveBeenCalled();
+    });
+
+    it('carte pour un ASN enfant de l\'OSN TEM', async () => {
+      expect((await call()).status).toBe(200);
+    });
+
+    it('carte pour une évaluation de l\'OSN TEM lui-même, casse et espaces tolérés', async () => {
+      const row = { ...ROW, organisation: { ...ROW.organisation!, id: OSN_ID.toUpperCase(), parent_id: null } };
+      expect((await call({ row, roots: `${OTHER_OSN_ID}, ${OSN_ID}` })).status).toBe(200);
+    });
+
+    it.each([
+      ['ASN d\'un autre OSN', { id: ASN_ID, parent_id: OTHER_OSN_ID }],
+      ['autre OSN racine', { id: OTHER_OSN_ID, parent_id: null }],
+      ['petit-enfant de l\'OSN', { id: ASN_ID, parent_id: ASN_ID }],
+      ['organisation sans id ni parent', { id: null, parent_id: null }],
+    ])('404 indiscernable d\'une évaluation inconnue : %s', async (_label, ids) => {
+      const out = await call({ row: { ...ROW, organisation: { ...ROW.organisation!, ...ids } } });
+      const unknown = await call({ row: null });
+      expect(out.status).toBe(404);
+      expect(out.body).toEqual(unknown.body);
+      expect(out.res.headers.get('cache-control')).toBe(unknown.res.headers.get('cache-control'));
+    });
+
+    it('404 sans organisation (hors périmètre par défaut)', async () => {
+      expect((await call({ row: { ...ROW, organisation: null } })).status).toBe(404);
+    });
+
+    it('la réponse ne contient ni id ni parent_id', async () => {
+      const r = await call();
+      expect(r.text).not.toContain(ASN_ID);
+      expect(r.text).not.toContain(OSN_ID);
+    });
   });
 
   describe('chemin', () => {
@@ -241,7 +291,7 @@ describe('gsat-link-card (E19 vague 2)', () => {
         reviewer_name: 'SOLO Hery',
         perimetre: ['org-x'],
       },
-      organisation: { nom: 'Faritany Analamanga', code: 'ANT-01', lat: -18.9 },
+      organisation: { ...ROW.organisation, lat: -18.9 },
     };
     const r = await call({ load: async () => toCardRow(raw) });
     expect(r.status).toBe(200);
@@ -254,11 +304,9 @@ describe('gsat-link-card (E19 vague 2)', () => {
   });
 
   it.each([
-    ['sans organisation : titre = campagne, pas répétée', { ...ROW, organisation: null }, 'Cycle 1 Faritany 2026', 'Auto-évaluation · 1 mars 2026 – 30 juin 2026'],
-    ['ni organisation ni campagne : « Évaluation »', { ...ROW, organisation: null, campagne: null }, 'Évaluation', 'Auto-évaluation'],
     ['type inconnu : omis', { ...ROW, type: 'autre' }, 'Faritany Analamanga', 'Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026 · Antananarivo'],
-    ['province inconnue (TEM) : omise', { ...ROW, organisation: { nom: 'Faritany Analamanga', code: 'TEM' } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026'],
-    ['code absent : province omise', { ...ROW, organisation: { nom: 'Faritany Analamanga', code: null } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026'],
+    ['province inconnue (TEM) : omise', { ...ROW, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'Faritany Analamanga', code: 'TEM' } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026'],
+    ['code absent : province omise', { ...ROW, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'Faritany Analamanga', code: null } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 – 30 juin 2026'],
     ['même jour : une seule date', { ...ROW, campagne: { nom: 'Cycle 1 Faritany 2026', date_ouverture: '2026-03-01T06:00:00+00:00', date_fermeture: '2026-03-01T15:00:00+00:00' } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 1 mars 2026 · Antananarivo'],
     ['dates invalides : omises', { ...ROW, campagne: { nom: 'Cycle 1 Faritany 2026', date_ouverture: 'demain', date_fermeture: 42 } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · Antananarivo'],
     ['fuseau Antananarivo', { ...ROW, campagne: { nom: 'Cycle 1 Faritany 2026', date_ouverture: '2026-05-03T21:30:00Z', date_fermeture: null } }, 'Faritany Analamanga', 'Auto-évaluation · Cycle 1 Faritany 2026 · 4 mai 2026 · Antananarivo'],
@@ -271,11 +319,11 @@ describe('gsat-link-card (E19 vague 2)', () => {
   });
 
   it('200 : textes nettoyés et bornés à 200 caractères ; rien pour le sous-titre → null', async () => {
-    const long = await call({ row: { statut: 'soumise', type: null, campagne: null, organisation: { nom: 'x'.repeat(500), code: null } } });
+    const long = await call({ row: { statut: 'soumise', type: null, campagne: null, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'x'.repeat(500), code: null } } });
     expect(long.body.title).toBe('x'.repeat(200));
     expect(long.body.subtitle).toBeNull();
     expect(long.body.state).toBe('soumise');
-    const dirty = await call({ row: { ...ROW, organisation: { nom: 'Faritany\u0000 Analamanga\n', code: 'ANT-01' } } });
+    const dirty = await call({ row: { ...ROW, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'Faritany\u0000 Analamanga\n', code: 'ANT-01' } } });
     expect(dirty.body.title).toBe('Faritany Analamanga');
   });
 
@@ -291,7 +339,7 @@ describe('gsat-link-card (E19 vague 2)', () => {
   describe('lecture', () => {
     it('la requête ne sélectionne que la liste blanche', () => {
       expect(EVALUATION_SELECT).toBe(
-        'statut, type, campagne:campagnes(nom, date_ouverture, date_fermeture), organisation:organisations(nom, code)',
+        'statut, type, campagne:campagnes(nom, date_ouverture, date_fermeture), organisation:organisations(id, parent_id, nom, code)',
       );
       for (const forbidden of ['*', 'score', '_by', '_par', '_name', 'reviewer', 'revue', 'pv_', 'commentaire', 'description', 'perimetre']) {
         expect(EVALUATION_SELECT).not.toContain(forbidden);
@@ -299,12 +347,12 @@ describe('gsat-link-card (E19 vague 2)', () => {
     });
 
     it('toCardRow : ne garde que les clés de la liste blanche', () => {
-      const row = toCardRow({ statut: 'soumise', type: 'auto', score_global: 1, campagne: { nom: 'C', date_ouverture: null, date_fermeture: null, statut: 'ouverte' }, organisation: { nom: 'O', code: 'ANT-01', lat: 1 } });
+      const row = toCardRow({ statut: 'soumise', type: 'auto', score_global: 1, campagne: { nom: 'C', date_ouverture: null, date_fermeture: null, statut: 'ouverte' }, organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'O', code: 'ANT-01', lat: 1 } });
       expect(row).toEqual({
         statut: 'soumise',
         type: 'auto',
         campagne: { nom: 'C', date_ouverture: null, date_fermeture: null },
-        organisation: { nom: 'O', code: 'ANT-01' },
+        organisation: { id: ASN_ID, parent_id: OSN_ID, nom: 'O', code: 'ANT-01' },
       });
     });
 
